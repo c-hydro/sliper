@@ -1,0 +1,23 @@
+sliper/
+├── sliper/               # Main package code
+│   ├── __init__.py
+│   ├── data/
+│   │   └── preprocessing.py
+│   ├── model/
+│   │   ├── trainer.py
+│   │   └── predictor.py
+│   ├── utils/
+│   │   └── metrics.py
+│   └── forecast.py       # Core forecasting module
+├── tests/
+│   ├── test_forecast.py
+│   └── test_metrics.py
+├── scripts/
+│   └── run_forecast.py   # CLI tool
+├── examples/
+│   └── notebook.ipynb
+├── README.md
+├── pyproject.toml
+├── setup.py
+└── LICENSE
+
