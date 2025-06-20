@@ -12,7 +12,6 @@ It is a Python package designed to **forecast shallow landslides (soil slips)** 
 - 🧠 **Forecasting API** for operational use and model testing
 - 📈 **Evaluation metrics** including ROC, AUC, Brier Score
 - 🧪 Includes tests and example notebooks
-- 🔌 CLI interface for quick predictions
 
 ---
 
