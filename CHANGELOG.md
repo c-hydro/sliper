@@ -1,108 +1,132 @@
 # Changelog
 
-## Version 2.2.0 (2025-06-03)
-- **PROJECT:** operational framework grid  
-  - **APPS – CELL:** convert_img2cell  
-    - Fixed bugs for grid orientation (adjust longitudes and latitudes 1d arrays) and improved error messages to alert users.  
-  - **APPS – CELL:** convert_swath2cell_ascat  
-    - Fixed bugs in file searching based on time information.  
-  - **APPS – TS:** convert_grid2csv_hmc  
-    - Fixed bugs in time period handling for `PREVIOUS_MONTH` and `CURRENT_MONTH` modes.  
-- **PROJECT:** operational framework grid  
-  - **APPS – POINTS:** analyze_point_ascat  
-    - Beta release.
+All notable changes to this project are documented in this file.
 
-## Version 2.1.0 (2025-05-27)
-- **PROJECT:** operational framework grid  
-  - **APPS – MAP:** compute_cell2grid_ecmwf  
-    - Fixed bugs for undefined datasets (due to time selection).  
-  - **APPS – MAP:** merge_grid2ref  
-    - Updated code to include additional cases and fixed related bugs.  
-  - **APPS – TS:** convert_grid_ecmwf2csv, convert_grid_hmc2csv, convert_grid_smap2csv  
-    - Fixed various bugs.  
-  - **APPS – TS:** sync_ts, analyze_ts  
-    - Fixed bugs.  
-- **TOOLS – DOWNLOADER HMC:**  
-  - Added tools to download legacy datasets.  
-- **TOOLS – ORGANIZER SYSTEM:**  
-  - Added tools to organize folder trees and backup crontab.
+---
 
-## Version 2.0.0 (2025-04-22)
-- **PROJECT:** operational framework grid  
-  - **APPS – MAP:** merge_grid2ref (first release)  
-  - **APPS – TS:** convert_time_step_src2csv (extended to operational mode run)  
-- **TOOLS – DOWNLOADER SMAP:** smap_downloader_spl2smp_e.py  
-  - Refactored all application methods and algorithms.
+## [3.0.0] – 2025-06-20
+### Added
+- Unified SLIPER runner integrating previous tools under a single modular framework
+- Dynamic YAML configuration handling
+- Workspace-based I/O structure (data_static, data_dynamic, tmp, log)
+- Automated conda-based environment provisioning
+- Structured logging and error tracking mechanisms
 
-## Version 1.9.0 (2025-02-27)
-- **PROJECT:** soil moisture triple collocation  
-  - **APPS – CELL:** app_map_create_tc (bug fixes)  
-- **TOOLS – DOWNLOADER SMAP:**  
-  - Bug fixes in time information handling for both `spl2smp_e.py` and `spl3smp_e.py`.
+### Changed
+- Refactored runner logic for maintainability and consistency
+- Enhanced compatibility with legacy soil slips predictors and scenario tools
+- Streamlined setup via `setup_sliper_system_conda_runner_data.sh`
 
-## Version 1.8.0 (2024-09-30)
-- **PROJECT:** time-series  
-  - **APPS – TS:** convert_grid_hmc2csv, convert_time_step_src2csv, sync_ts, analyze_ts, view_ts  
-    - Numerous bug fixes (delimiter issues, time selection, unavailable datasets) and feature extensions (heatmaps via seaborn, resampling).
+---
 
-## Version 1.7.0 (2024-07-09)
-- **PROJECT:** soil moisture rescaled (obs/mod)  
-  - **APPS – MAP:** create_map_smr (first release)  
-- **PROJECT:** grid  
-  - **APPS – TS:** resample_grid_src2ref (first release)  
-- **PROJECT:** time-series  
-  - **APPS – TS:** convert_grid_ecmwf2csv, convert_grid_hmc2csv, convert_grid_ascat2csv, convert_grid_smap2csv, convert_grid_gldas2csv  
-    - Fixed reference domain orientation bugs.  
-- **TOOLS:** transfer, validation, assimilation, xml (first release).
+## [2.6.0] – 2025-05-13
+### Fixed
+- Time selection issues in soil slips scenarios
+- Indicators computation (soil moisture)
+- Database format change from shapefile to CSV
 
-## Version 1.6.0 (2024-05-29)
-- **PROJECT:** soil moisture triple collocation  
-  - **APPS – CELL:** app_map_create_tc  
-    - Coastal smoothing, domain organization, time-selection tolerance fixes, weight method bug fixes.  
-- **PROJECT:** validation framework  
-  - **APPS – CELL:** app_cell_swi, app_cell_rzsm, app_cell_scaling, app_cell_metrics (first releases)  
-  - **TOOLS – VALIDATION HSAF:** app_validation_main, app_validation_publisher (bulk options, bug fixes).
+---
 
-## Version 1.5.0 (2024-04-15)
-- **PROJECT:** validation framework  
-  - **APPS – CELL:** app_img2cell_gldas, app_img2cell_ecmwf (updates, new image_buffer option)  
-  - **TOOLS – VALIDATION HSAF:** app_validation_main, app_validation_publisher (logging, option additions).
+## [2.5.0] – 2024-10-10
+### Fixed
+- Time selection bugs for rain and soil moisture
+- Indicator computation inconsistencies
+- Added support for left/right temporal selection
 
-## Version 1.4.1 (2024-04-09)
-- **PROJECT:** validation framework  
-  - **APPS – CELL:** app_img2cell_gldas (georeference bug fix).
+---
 
-## Version 1.4.0 (2024-03-29)
-- **PROJECT:** soil moisture rescaled (obs/mod)  
-  - **APPS – MAP:** convert_cell2grid_ascat, convert_cell2grid_metrics (first releases)  
-- **PROJECT:** validation framework  
-  - **APPS – CELL:** app_img2cell_cci, app_img2cell_gldas (updates)  
-  - **TOOLS – VALIDATION HSAF/SM:** app_validation_main (bug fixes).
+## [2.4.0] – 2024-07-10
+### Fixed
+- Regridding rain maps using `pyresample`
+- ASCII grid EPSG errors
+- Added `GDAL_DATA` dependency
 
-## Version 1.3.0 (2024-02-28)
-- **PROJECT:** soil moisture rescaled (obs/mod)  
-  - **APPS – MAP:** convert_swath2cell (bug fixes, expanded product support, file management).  
-- **PROJECT:** time-series  
-  - **APPS – TS:** join_ts, sync_ts, analyze_ts, view_ts (first release).  
-- **PROJECT:** utility framework  
-  - **TOOLS:** transfer, validation, assimilation, xml (first release).  
-- **PROJECT:** viewer framework  
-  - **NOTEBOOK:** notebook_recolour_sm_ts.  
-- **PROJECT:** validation framework  
-  - **TOOLS – VALIDATION SM:** app_validation_main (first release).
+---
 
-## Version 1.2.0 (2023-12-19)
-- **PROJECT:** soil moisture triple collocation  
-  - **APPS:** create_grid_tc (added temporal periods, resampling, grid fixes, time selection fixes).
+## [2.3.0] – 2024-01-16
+### Added
+- New viewer for soil slips scenario analysis
 
-## Version 1.1.0 (2023-11-28)
-- **PROJECT:** soil moisture triple collocation and time-series  
-  - **APPS:** cell, maps, time-series; **TOOLS:** converter, downloader, plot_validation, plot_timeseries, validation, xml; **NOTEBOOKS:** time-series datasets and products.  
-  - Refactored project structure, extended methods, fixed operational-mode bugs.
+---
 
-## Version 1.0.0 (2023-11-14)
-- **PROJECT:** beta frameworks  
-  - **APPS:** maps and time-series; **TOOLS:** validation, grid2ts, swath2ts, plotting, downloader, xml; **NOTEBOOKS:** time-series.
+## [2.2.0] – 2023-01-18
+### Added
+- Support for XLS/XLSX station input
+- Auto-detection of soil slips alert area
 
-## Version 0.0.0 (2023-06-06)
-- First commit and initialization of default settings.
+---
+
+## [2.1.2] – 2022-10-13
+### Fixed
+- Kernel function errors in predictors module
+
+---
+
+## [2.1.1] – 2022-04-13
+### Fixed
+- Multiple bugs across predictors and scenarios tools
+- Refactored internal methods
+
+---
+
+## [2.1.0] – 2022-03-20
+### Notes
+- Pre-operational release
+
+---
+
+## [2.0.0] – 2022-04-13
+### Notes
+- Pre-operational release with scenarios and predictors apps
+
+---
+
+## [1.4.1] – 2022-01-05
+### Added
+- Jupyter analysis for soil slips time series
+
+---
+
+## [1.4.0] – 2021-05-15
+### Added
+- Rain limits check
+- Unified `.csv` file output for scenarios
+- Rain peaks computation fix
+
+---
+
+## [1.3.0] – 2021-04-12
+### Added
+- Dependency management improvements
+- Rain peaks forcing creation
+
+---
+
+## [1.2.1] – 2021-03-19
+### Fixed
+- Output indicators and scenario generation bugs
+
+---
+
+## [1.2.0] – 2021-02-02
+### Fixed
+- Output CSV formatting and rain dataset generation
+
+---
+
+## [1.1.0] – 2020-11-25
+### Changed
+- Updated readers/writers for rain and soil moisture variables
+
+---
+
+## [1.0.0] – 2020-05-15
+### Notes
+- Initial beta release of `scenarios_main.py`
+
+---
+
+## [0.0.1] – 2020-05-10
+### Notes
+- First commit and initialization
+

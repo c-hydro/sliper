@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 """
-ARPAL Processing Tool - SOIL SLIPS SCENARIOS
+SLIPER APP - RAIN INDICATORS PROCESSING - Soil Landslide Information and Prediction & Early Response
 
-__date__ = '20250430'
+__date__ = '20250620'
 __version__ = '2.0.5'
 __author__ =
         'Fabio Delogu (fabio.delogu@cimafoundation.org',
@@ -16,6 +16,7 @@ General command line:
 python app_indicators_rain_main.py -settings_file configuration.json -time "YYYY-MM-DD HH:MM"
 
 Version(s):
+20250620 (2.5.0) --> Beta release for sliper package based on previous package(s) and version(s)
 20250430 (2.0.5) --> Fix and review codes for operational release based on realtime requirements
 20250310 (2.0.4) --> Fix and review codes for operational release based on realtime requirements
 20241007 (2.0.3) --> Fix and review codes for operational release based on realtime requirements
