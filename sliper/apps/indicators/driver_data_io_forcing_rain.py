@@ -23,7 +23,7 @@ from lib_data_io_csv_scenarios import read_file_csv
 from lib_data_io_xlsx import read_file_xlsx
 
 from lib_utils_data_table import read_table_obj, select_table_obj, get_table_value
-from lib_utils_data_grid_rain import interpolate_rain_points2map, reproject_rain_source2map, \
+from lib_utils_data_rain import interpolate_rain_points2map, reproject_rain_source2map, \
     get_data_tiff, save_data_tiff, save_data_nc
 
 from lib_utils_io_obj import create_dset, write_dset

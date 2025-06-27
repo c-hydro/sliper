@@ -20,7 +20,7 @@ from shapely.geometry import Point
 
 from pandas.tseries import offsets
 
-from lib_data_io_shp import read_file_point as read_file_point_shp
+from lib_data_io_shp import read_file_shp as read_file_point_shp
 from lib_data_io_csv_soil_slips import read_file_point as read_file_point_csv
 
 from lib_info_args import logger_name_scenarios as logger_name

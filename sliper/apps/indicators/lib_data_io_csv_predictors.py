@@ -18,6 +18,37 @@ from lib_info_args import logger_name_predictors as logger_name
 log_stream = logging.getLogger(logger_name)
 # -------------------------------------------------------------------------------------
 
+import pandas as pd
+from datetime import datetime
+
+def save_dataframe_with_extras(
+    filename='output.csv',
+    df,
+    extra_fields=None,
+    csv_sep=',',
+    time_format='%Y-%m-%d %H:%M',
+    float_format='%.2f'
+):
+    """
+    Add extra fields to a DataFrame, format timestamps and floats, and save as CSV.
+
+    Args:
+        df (pd.DataFrame): The original DataFrame.
+        extra_fields (dict): Extra columns to add to each row.
+        filename (str): Output CSV file path.
+        csv_sep (str): CSV delimiter.
+        time_format (str): Format string for datetime fields.
+        float_format (str): Format string for float values (e.g., '%.2f').
+    """
+    if extra_fields:
+        for key, value in extra_fields.items():
+            if isinstance(value, (datetime, pd.Timestamp)):
+                value = value.strftime(time_format)
+            df[key] = value
+
+    df.to_csv(filename, index=False, sep=csv_sep, float_format=float_format)
+
+
 
 # -------------------------------------------------------------------------------------
 # Method to write file csv

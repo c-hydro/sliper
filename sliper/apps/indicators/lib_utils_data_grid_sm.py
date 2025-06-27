@@ -22,10 +22,10 @@ from osgeo import ogr
 
 from lib_data_io_nc import read_file_nc
 from lib_data_io_binary import read_file_binary
-from lib_data_io_tiff import write_file_tiff
+from lib_data_io_tiff_OLD import write_file_tiff
 from lib_utils_io_obj import write_dset, create_darray_2d
 
-from lib_utils_geo import convert_cn2s
+#from lib_utils_geo import convert_cn2s
 
 from lib_info_args import proj_wkt as proj_default_wkt
 from lib_info_args import logger_name_scenarios as logger_name

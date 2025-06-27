@@ -3,12 +3,12 @@ Library Features:
 
 Name:          lib_utils_time
 Author(s):     Fabio Delogu (fabio.delogu@cimafoundation.org)
-Date:          '20220320'
+Date:          '20250618'
 Version:       '1.0.0'
 """
 
-# -------------------------------------------------------------------------------------
-# Libraries
+# ----------------------------------------------------------------------------------------------------------------------
+# libraries
 import logging
 import numpy as np
 import re
@@ -16,99 +16,97 @@ import pandas as pd
 
 from copy import deepcopy
 from datetime import date
+from typing import Optional, Union, List, Tuple
 
-from lib_info_args import logger_name_scenarios
-from lib_info_args import logger_name_predictors
-from lib_utils_logging import LogDecorator
+from lib_info_args import logger_name
 
 from lib_utils_system import get_dict_nested_value
 
-# Logging
-log_stream = logging.getLogger()
-# -------------------------------------------------------------------------------------
+# logging
+log_stream = logging.getLogger(logger_name)
+# ----------------------------------------------------------------------------------------------------------------------
 
 
-# -------------------------------------------------------------------------------------
-# Method to decorate the logger_name of the time fx
-@LogDecorator(logger_name=logger_name_scenarios)
-def set_time_scenarios(**kwargs):
-    return set_time(**kwargs)
+# ----------------------------------------------------------------------------------------------------------------------
+# method to set time run
+def set_time(
+    time_run_args: Optional[str] = None,
+    time_run_file: Optional[str] = None,
+    time_format: str = '%Y-%m-%d %H:%M',
+    time_run_file_start: Optional[str] = None,
+    time_run_file_end: Optional[str] = None,
+    time_period: int = 1,
+    time_frequency: str = 'H',
+    time_rounding: str = 'H',
+    time_reverse: bool = True
+) -> List[Union[pd.Timestamp, pd.DatetimeIndex]]:
+    """
+    Set the time run and compute a time range.
 
+    Parameters:
+    - time_run_args (str, optional): Explicit time string (from argument).
+    - time_run_file (str, optional): Time string from file metadata.
+    - time_format (str): String format for parsing default/system time.
+    - time_run_file_start (str, optional): Start of time range (if provided).
+    - time_run_file_end (str, optional): End of time range (if provided).
+    - time_period (int): Number of periods in the time range.
+    - time_frequency (str): Frequency string for the time range (e.g., 'H', 'D').
+    - time_rounding (str): Rounding frequency (e.g., 'H' for hour).
+    - time_reverse (bool): Whether to reverse the time range.
 
-@LogDecorator(logger_name=logger_name_predictors)
-def set_time_predictors(**kwargs):
-    return set_time(**kwargs)
-# -------------------------------------------------------------------------------------
-
-
-# -------------------------------------------------------------------------------------
-# Method to set time run
-def set_time(time_run_args=None, time_run_file=None, time_format='%Y-%m-%d %H:$M',
-             time_run_file_start=None, time_run_file_end=None,
-             time_period=1, time_frequency='H', time_rounding='H', time_reverse=True):
+    Returns:
+    - List[Union[pd.Timestamp, pd.DatetimeIndex]]: The reference time and time range.
+    """
 
     log_stream.info(' ----> Set time period ... ')
-    if (time_run_file_start is None) and (time_run_file_end is None):
 
+    if time_run_file_start is None and time_run_file_end is None:
         log_stream.info(' -----> Time info defined by "time_run" argument ... ')
 
         if time_run_args is not None:
             time_tmp = time_run_args
-            log_stream.info(' ------> Time ' + time_tmp + ' set by argument')
-        elif (time_run_args is None) and (time_run_file is not None):
+            log_stream.info(f' ------> Time {time_tmp} set by argument')
+        elif time_run_file is not None:
             time_tmp = time_run_file
-            logging.info(' ------> Time ' + time_tmp + ' set by user')
-        elif (time_run_args is None) and (time_run_file is None):
+            log_stream.info(f' ------> Time {time_tmp} set by user')
+        else:
             time_now = date.today()
             time_tmp = time_now.strftime(time_format)
-            log_stream.info(' ------> Time ' + time_tmp + ' set by system')
-        else:
-            log_stream.info(' ----> Set time period ... FAILED')
-            log_stream.error(' ===> Argument "time_run" is not correctly set')
-            raise IOError('Time type or format is wrong')
+            log_stream.info(f' ------> Time {time_tmp} set by system')
 
-        time_run = pd.Timestamp(time_tmp)
-        time_run = time_run.floor(time_rounding)
+        time_run = pd.Timestamp(time_tmp).floor(time_rounding.lower())
 
         if time_period > 0:
-            time_range = pd.date_range(end=time_run, periods=time_period, freq=time_frequency)
+            time_range = pd.date_range(end=time_run, periods=time_period, freq=time_frequency.lower())
         else:
-            log_stream.warning(' ===> TimePeriod must be greater then 0. TimePeriod is set automatically to 1')
-            time_range = pd.DatetimeIndex([time_now], freq=time_frequency)
+            log_stream.warning(' ===> TimePeriod must be greater than 0. TimePeriod is set automatically to 1')
+            time_range = pd.DatetimeIndex([time_run], freq=time_frequency.lower())
 
-        logging.info(' -----> Time info defined by "time_run" argument ... DONE')
+        log_stream.info(' -----> Time info defined by "time_run" argument ... DONE')
 
-    elif (time_run_file_start is not None) and (time_run_file_end is not None):
-
+    elif time_run_file_start is not None and time_run_file_end is not None:
         log_stream.info(' -----> Time info defined by "time_start" and "time_end" arguments ... ')
 
-        time_run_file_start = pd.Timestamp(time_run_file_start)
-        time_run_file_start = time_run_file_start.floor(time_rounding)
-        time_run_file_end = pd.Timestamp(time_run_file_end)
-        time_run_file_end = time_run_file_end.floor(time_rounding)
+        time_start = pd.Timestamp(time_run_file_start).floor(time_rounding)
+        time_end = pd.Timestamp(time_run_file_end).floor(time_rounding)
 
-        if time_run_file_start > time_run_file_end:
+        if time_start > time_end:
             log_stream.error(' ===> Variable "time_start" is greater than "time_end". Check your settings file.')
             raise RuntimeError('Time_Range is not correctly defined.')
 
         if time_run_args is not None:
             time_tmp = deepcopy(time_run_args)
-            log_stream.info(' ------> Time ' + time_tmp + ' set by argument')
-        elif (time_run_args is None) and (time_run_file is not None):
+            log_stream.info(f' ------> Time {time_tmp} set by argument')
+        elif time_run_file is not None:
             time_tmp = deepcopy(time_run_file)
-            logging.info(' ------> Time ' + time_tmp + ' set by user')
-        elif (time_run_args is None) and (time_run_file is None):
+            log_stream.info(f' ------> Time {time_tmp} set by user')
+        else:
             time_now = date.today()
             time_tmp = time_now.strftime(time_format)
-            log_stream.info(' ------> Time ' + time_tmp + ' set by system')
-        else:
-            log_stream.info(' ----> Set time period ... FAILED')
-            log_stream.error(' ===> Argument "time_run" is not correctly set')
-            raise IOError('Time type or format is wrong')
+            log_stream.info(f' ------> Time {time_tmp} set by system')
 
-        time_run = pd.Timestamp(time_tmp)
-        time_run = time_run.floor(time_rounding)
-        time_range = pd.date_range(start=time_run_file_start, end=time_run_file_end, freq=time_frequency)
+        time_run = pd.Timestamp(time_tmp).floor(time_rounding)
+        time_range = pd.date_range(start=time_start, end=time_end, freq=time_frequency)
 
         log_stream.info(' -----> Time info defined by "time_start" and "time_end" arguments ... DONE')
 
@@ -123,9 +121,7 @@ def set_time(time_run_args=None, time_run_file=None, time_format='%Y-%m-%d %H:$M
     log_stream.info(' ----> Set time period ... DONE')
 
     return [time_run, time_range]
-
 # -------------------------------------------------------------------------------------
-
 
 # -------------------------------------------------------------------------------------
 # Method to verify time window

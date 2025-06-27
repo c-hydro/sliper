@@ -11,16 +11,23 @@ Version:       '1.0.0'
 # -------------------------------------------------------------------------------------
 # Libraries
 import logging
+import warnings
+import os
 import rasterio
-import ogr
 from osgeo import osr, ogr, gdal
 
 import geopandas as gpd
 
+from lib_data_io_geo import read_file_grid
+from lib_utils_generic import create_filename_tmp
+
 from lib_info_args import proj_wkt as proj_default_wkt
 from lib_info_args import logger_name_predictors as logger_name
 
+from shapely.errors import ShapelyDeprecationWarning
+
 # Logging
+warnings.filterwarnings("ignore", category=ShapelyDeprecationWarning)
 logging.getLogger("fiona").setLevel(logging.WARNING)
 log_stream = logging.getLogger(logger_name)
 # -------------------------------------------------------------------------------------
@@ -28,24 +35,25 @@ log_stream = logging.getLogger(logger_name)
 
 # -------------------------------------------------------------------------------------
 # Method to read shape file
-def read_file_point(file_name):
+def read_file_shp(file_name):
 
     shape_dframe = gpd.read_file(file_name)
     shape_geoms = ((feature['geometry'], 1) for feature in shape_dframe.iterfeatures())
 
-    shape_collections = list(shape_dframe.values)
+    shape_datasets = list(shape_dframe.values)
 
-    return shape_dframe, shape_collections, shape_geoms
+    shape_polygons = {}
+    for shape_group in shape_datasets:
+        shape_id, shape_coords = shape_group[0], shape_group[1]
+        shape_polygons[shape_id] = shape_coords
+
+    return shape_dframe, shape_polygons, shape_geoms
 # -------------------------------------------------------------------------------------
 
 
 # -------------------------------------------------------------------------------------
 # Convert polygons to shape file
-def convert_polygons_2_shp(shape_polygon, shape_file, template_file_name=None):
-
-    template_handle = rasterio.open(template_file_name)
-    metadata = template_handle.meta.copy()
-    metadata.update(compress='lzw')
+def convert_polygons_2_shp(shape_polygon, shape_file):
 
     driver = ogr.GetDriverByName('Esri Shapefile')
     ds = driver.CreateDataSource(shape_file)
@@ -76,10 +84,26 @@ def convert_polygons_2_shp(shape_polygon, shape_file, template_file_name=None):
 
 # -------------------------------------------------------------------------------------
 # Method to transform shape file to tiff
-def convert_shp_2_tiff(shape_file, raster_file, pixel_size=0.1, burn_value=1, epsg=4326):
+def convert_shp_2_tiff(shape_file, tiff_file=None, tiff_remove=True,
+                       pixel_size=0.1, burn_value=1, epsg=4326, folder_tmp=None):
 
+    # read the shape file
     input_shp = ogr.Open(shape_file)
     shp_layer = input_shp.GetLayer()
+
+    # create a temporary folder if not specified
+    if folder_tmp is None:
+        # create a temporary folder in the same directory of the shape file
+        folder_tmp = os.path.dirname(shape_file)
+
+    if tiff_file is not None:
+        grid_file = tiff_file
+    else:
+        grid_file = create_filename_tmp(folder=folder_tmp)
+
+    # convert shapefile to raster
+    folder_grid, file_grid = os.path.split(grid_file)
+    os.makedirs(folder_grid, exist_ok=True)
 
     # get extent values to set size of output raster.
     x_min, x_max, y_min, y_max = shp_layer.GetExtent()
@@ -97,7 +121,7 @@ def convert_shp_2_tiff(shape_file, raster_file, pixel_size=0.1, burn_value=1, ep
     driver = gdal.GetDriverByName(image_type)
 
     # passing the filename, x and y direction resolution, no. of bands, new raster.
-    raster_handle = driver.Create(raster_file, x_res, y_res, 1, gdal.GDT_Byte)
+    raster_handle = driver.Create(grid_file, x_res, y_res, 1, gdal.GDT_Byte)
 
     # transforms between pixel raster space to projection coordinate space.
     raster_handle.SetGeoTransform((x_min, pixel_size, 0, y_min, 0, pixel_size))
@@ -116,6 +140,23 @@ def convert_shp_2_tiff(shape_file, raster_file, pixel_size=0.1, burn_value=1, ep
     raster_handle.SetProjection(raster_srs.ExportToWkt())
 
     # main conversion method
-    ds = gdal.Rasterize(raster_handle, shape_file, burnValues=[burn_value])
-    ds = None
+    gdal.Rasterize(raster_handle, shape_file, burnValues=[burn_value])
+    raster_handle = None
+
+    # reload the raster file to return as a DataArray
+    da = read_file_grid(grid_file)
+    # set attributes for the DataArray
+    da.attrs = {
+        'shape_file': shape_file,
+        'pixel_size': pixel_size,
+        'burn_value': burn_value,
+        'epsg': epsg}
+
+    # remove the temporary file
+    if os.path.exists(grid_file):
+        if tiff_remove:
+            os.remove(grid_file)
+
+    return da
+
 # -------------------------------------------------------------------------------------

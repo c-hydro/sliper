@@ -3,248 +3,46 @@ Library Features:
 
 Name:          lib_utils_geo
 Author(s):     Fabio Delogu (fabio.delogu@cimafoundation.org)
-Date:          '20220420'
+Date:          '20250618'
 Version:       '1.5.0'
 """
-#######################################################################################
-# Libraries
+# ----------------------------------------------------------------------------------------------------------------------
+# libraries
 import logging
+import warnings
+
 import numpy as np
+import xarray as xr
+import pandas as pd
+
+from functools import wraps
+from typing import Union, List
+
 import pyproj
-import os
-
-import rasterio
-
-from rasterio.crs import CRS
-
-from lib_data_io_tiff import write_file_tiff
-
-from lib_info_args import proj_wkt as proj_default_wkt
-
 from scipy.interpolate import griddata
 from copy import deepcopy
+
+from pyresample import geometry
+from pyresample.kd_tree import get_neighbour_info, resample_nearest, resample_custom
+
 from functools import partial
 from shapely.ops import transform
 from shapely.geometry import Point
 from shapely.vectorized import contains
+from rasterio.crs import CRS
 
-from lib_utils_io_obj import create_darray_2d
-from lib_info_args import logger_name_scenarios as logger_name
+from lib_info_args import logger_name
 
 # Logging
 log_stream = logging.getLogger(logger_name)
+warnings.filterwarnings("ignore", category=FutureWarning, module="shapely")
 
 # Debug
 import matplotlib.pylab as plt
-#######################################################################################
+# ----------------------------------------------------------------------------------------------------------------------
 
 
-# -------------------------------------------------------------------------------------
-# Method to save data values in geotiff format
-def save_data_tiff(file_name, file_data, file_geo_x, file_geo_y, file_metadata=None, file_epsg_code=None):
-
-    if file_metadata is None:
-        file_metadata = {'description': 'data'}
-
-    file_data_height, file_data_width = file_data.shape
-
-    file_geo_x_west = np.min(file_geo_x)
-    file_geo_x_east = np.max(file_geo_x)
-    file_geo_y_south = np.min(file_geo_y)
-    file_geo_y_north = np.max(file_geo_y)
-
-    file_data_transform = rasterio.transform.from_bounds(
-        file_geo_x_west, file_geo_y_south, file_geo_x_east, file_geo_y_north,
-        file_data_width, file_data_height)
-
-    if not isinstance(file_data, list):
-        file_data = [file_data]
-
-    file_wkt = deepcopy(proj_default_wkt)
-    try:
-        if isinstance(file_epsg_code, str):
-            file_crs = CRS.from_string(file_epsg_code)
-            file_wkt = file_crs.to_wkt()
-        elif (file_epsg_code is None) or (not isinstance(file_epsg_code, str)):
-            log_stream.warning(' ===> Geographical projection is not defined in string format. '
-                               ' Will be used the Default projection EPSG:4326')
-            file_crs = CRS.from_string('EPSG:4326')
-            file_wkt = file_crs.to_wkt()
-    except BaseException as b_exp:
-        log_stream.warning(' ===> Issue in defining geographical projection. Particularly ' + str(b_exp) +
-                           ' error was fuond. A default wkt definition will be used')
-
-    write_file_tiff(
-        file_name, file_data, file_data_width, file_data_height, file_data_transform, file_wkt,
-        file_metadata=file_metadata)
-
-# -------------------------------------------------------------------------------------
-
-
-# -------------------------------------------------------------------------------------
-# Method to read tiff file
-def get_data_tiff(file_name, file_mandatory=True):
-
-    if os.path.exists(file_name):
-        if file_name.endswith('tif') or file_name.endswith('.tiff'):
-
-            dset = rasterio.open(file_name)
-            bounds = dset.bounds
-            res = dset.res
-            transform = dset.transform
-            data = dset.read()
-            values = data[0, :, :]
-            if dset.crs is None:
-                proj = proj_default_wkt
-            else:
-                proj = dset.crs.wkt
-            geotrans = dset.transform
-
-            decimal_round = 7
-
-            dims = values.shape
-            high = dims[0]
-            wide = dims[1]
-
-            center_right = bounds.right - (res[0] / 2)
-            center_left = bounds.left + (res[0] / 2)
-            center_top = bounds.top - (res[1] / 2)
-            center_bottom = bounds.bottom + (res[1] / 2)
-
-            if center_bottom > center_top:
-                center_bottom_tmp = center_top
-                center_top_tmp = center_bottom
-                center_bottom = center_bottom_tmp
-                center_top = center_top_tmp
-
-                values = np.flipud(values)
-
-            lon = np.arange(center_left, center_right + np.abs(res[0] / 2), np.abs(res[0]), float)
-            lat = np.arange(center_bottom, center_top + np.abs(res[0] / 2), np.abs(res[1]), float)
-            lons, lats = np.meshgrid(lon, lat)
-
-            min_lon_round = round(np.min(lons), decimal_round)
-            max_lon_round = round(np.max(lons), decimal_round)
-            min_lat_round = round(np.min(lats), decimal_round)
-            max_lat_round = round(np.max(lats), decimal_round)
-
-            center_right_round = round(center_right, decimal_round)
-            center_left_round = round(center_left, decimal_round)
-            center_bottom_round = round(center_bottom, decimal_round)
-            center_top_round = round(center_top, decimal_round)
-
-            assert min_lon_round == center_left_round
-            assert max_lon_round == center_right_round
-            assert min_lat_round == center_bottom_round
-            assert max_lat_round == center_top_round
-
-            lats = np.flipud(lats)
-
-            da_frame = create_darray_2d(values, lons, lats, coord_name_x='west_east', coord_name_y='south_north',
-                                        dim_name_x='west_east', dim_name_y='south_north')
-
-        else:
-            log_stream.error(' ===> File ' + file_name + ' format unknown')
-            raise NotImplementedError('File type reader not implemented yet')
-    else:
-        if file_mandatory:
-            log_stream.error(' ===> File ' + file_name + ' not found')
-            raise IOError('File location or name is wrong')
-        else:
-            log_stream.warning(' ===> File ' + file_name + ' not found')
-            da_frame, proj, geotrans = None, None, None
-
-    return da_frame, proj, geotrans
-# -------------------------------------------------------------------------------------
-
-
-# -------------------------------------------------------------------------------------
-# Method to create grid information
-def create_grid(
-        xll_corner=None, yll_corner=None, rows=None, cols=None, cell_size=None,
-        tag_geo_values='data', grid_format='data_array',
-        tag_geo_x='geo_x', tag_geo_y='geo_y',
-        tag_nodata='nodata_value', value_no_data=-9999.0, value_default_data=1):
-
-    geo_x_start = xll_corner + cell_size / 2
-    geo_x_end = xll_corner + cell_size / 2 + cell_size * (cols - 1)
-    geo_x_values = np.linspace(geo_x_start, geo_x_end, cols)
-
-    geo_y_start = yll_corner + cell_size / 2
-    geo_y_end = yll_corner + cell_size / 2 + cell_size * (rows - 1)
-    geo_y_values = np.linspace(geo_y_start, geo_y_end, rows)
-
-    geo_x_values_2d, geo_y_values_2d = np.meshgrid(geo_x_values, geo_y_values)
-
-    geo_y_right = geo_x_values_2d[0, 0]
-    geo_y_left = geo_x_values_2d[0, -1]
-    geo_y_upper = geo_y_values_2d[0, 0]
-    geo_y_lower = geo_y_values_2d[-1, 0]
-    if geo_y_lower > geo_y_upper:
-        geo_y_values_2d = np.flipud(geo_y_values_2d)
-
-    geo_data_values = np.zeros([geo_y_values.shape[0], geo_x_values.shape[0]])
-    geo_data_values[:, :] = value_default_data
-
-    if grid_format == 'dictionary':
-
-        data_grid = {tag_geo_values: geo_data_values, tag_geo_x: geo_x_values_2d[0, :],
-                     tag_geo_y: geo_y_values_2d[:, 0]}
-
-        if tag_nodata not in list(data_grid.keys()):
-            data_grid[tag_nodata] = value_no_data
-
-    elif grid_format == 'data_array':
-
-        data_attrs = {
-            'xll_corner': xll_corner, 'yll_corner': yll_corner,
-            'rows': rows, 'cols': cols,
-            'cell_size': cell_size, tag_nodata: value_no_data}
-
-        data_grid = create_darray_2d(
-            geo_data_values, geo_x_values_2d[0, :], geo_y_values_2d[:, 0],
-            coord_name_x='west_east', coord_name_y='south_north',
-            dim_name_x='west_east', dim_name_y='south_north')
-
-        data_grid.attrs = data_attrs
-    else:
-        log_stream.error(' ===> Grid format "' + grid_format + '" is not expected')
-        raise NotImplementedError('Only "dictionary" and "data_array" formats are available.')
-
-    return data_grid
-# -------------------------------------------------------------------------------------
-
-
-# ------------------------------------------------------------------------------------
-# Method to convert curve number to s (vmax)
-def convert_cn2s(data_cn, data_terrain):
-
-    data_s = (1000.0 / data_cn - 10) * 25.4
-    data_s[data_cn <= 0] = np.nan
-    data_s[data_cn > 100] = np.nan
-
-    data_s[(data_terrain >= 0) & (data_s < 1.0)] = 1.0
-
-    data_s[data_s < 0] = 0.0
-
-    data_s[data_terrain < 0] = np.nan
-
-    data_s[0, :] = np.nan
-    data_s[-1, :] = np.nan
-    data_s[:, 0] = np.nan
-    data_s[:, -1] = np.nan
-
-    # Debug
-    # plt.figure()
-    # plt.imshow(data_s)
-    # plt.colorbar()
-    # plt.show()
-
-    return data_s
-# ------------------------------------------------------------------------------------
-
-
-# -------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 # Method to join circle and its grid
 def find_points_with_buffer(points_values, points_x_values_2d, points_y_values_2d,
                             mask_values, mask_x_values_2d, mask_y_values_2d,
@@ -280,10 +78,10 @@ def find_points_with_buffer(points_values, points_x_values_2d, points_y_values_2
 
     return points_collections
 
-# -------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 
 
-# ------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 # Method to compute grid from bounds
 def compute_grid_from_bounds(geo_mask_2d, geo_x_2d, geo_y_2d, km=10):
 
@@ -331,10 +129,10 @@ def compute_grid_from_bounds(geo_mask_2d, geo_x_2d, geo_y_2d, km=10):
 
     return point_mask_2d, point_x_2d, point_y_2d
 
-# ------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 
 
-# ------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 # Method to define a buffer around a geographical point
 def compute_geodesic_point_buffer(lon, lat, km=10):
 
@@ -363,22 +161,308 @@ def compute_geodesic_point_buffer(lon, lat, km=10):
     points_coords = points_wgs84.exterior.coords[:]
 
     return point_polygon, points_coords
-# ------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 
 
-# ------------------------------------------------------------------------------------
-# Method to convert decimal degrees to km (2)
-def degree_2_km(deg):
-    earth_radius = 6378.1370
-    km = deg * (np.pi * earth_radius) / 180
-    return km
-# ------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
+# decorator to apply a function to each spatial slice of a DataArray
+def apply_to_spatial_slices(func):
+    @wraps(func)
+    def wrapper(source_da, target_da, *args, **kwargs):
+
+        # check if source_da is 2D
+        if source_da.ndim == 2:
+            return func(source_da, target_da, *args, **kwargs)
+
+        # define spatial and non-spatial dimensions
+        spatial_dims = ['latitude', 'longitude']
+        non_spatial_dim = ['time']
+
+        non_spatial_idx = None
+        if non_spatial_dim in list(source_da.dims):
+            non_spatial_idx = list(source_da.dims).index(non_spatial_dim)
+
+        # check expected and data dimensions
+        all_dims = []
+        all_dims.extend(spatial_dims)
+        all_dims.extend(non_spatial_dim)
+
+        if all_dims.__len__() != source_da.ndim:
+            raise ValueError("Source DataArray must have 2D or ND with last two dims as spatial.")
+
+        # apply function to each 2D slice
+        regridded_list, time_list = [], []
+        for idx in np.ndindex(*[source_da.sizes[dim] for dim in non_spatial_dim]):
+
+            time_step = pd.Timestamp(source_da[non_spatial_dim[0]].values[idx])  # Get the current index for non-spatial dims
+
+            slice_time = {non_spatial_dim[0]: pd.DatetimeIndex([time_step])}
+            slice_2d = source_da.sel(slice_time)
+
+            regridded_slice = func(slice_2d, target_da, *args, **kwargs)
+            regridded_slice.expand_dims(slice_time)
+
+            time_list.append(time_step)
+            regridded_list.append(regridded_slice)
+
+        # combine the regridded slices into a single DataArray
+        combined_tyx = xr.combine_nested(regridded_list, concat_dim=non_spatial_dim)
+        # reorder dimensions to match target grid
+        combined_yxt = combined_tyx.transpose('latitude', 'longitude', 'time')
+        combined_yxt['time'] = pd.DatetimeIndex(time_list)
+
+        return combined_yxt
+    return wrapper
+# ----------------------------------------------------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------------------------------------------------
+# method to resample data from source to target grid using pyresample
+@apply_to_spatial_slices
+def resample_data(
+        source_da,
+        target_da,
+        name_da=None,
+        method='nearest',
+        radius_of_influence=50000,
+        neighbours=1,
+        index_array=None,
+        weight_array=None,
+        valid_output_index=None
+):
+    """
+    Regrid source_da to target_da using either precomputed indices or direct pyresample.
+
+    Parameters:
+        source_da (xarray.DataArray): Source data with lat/lon coordinates.
+        target_da (xarray.DataArray): Target grid with lat/lon coordinates.
+        nsme_da (str): Name for the output DataArray. If None, uses source_da name with '_regridded' suffix.
+        method (str): 'nearest' or 'weighted'.
+        radius_of_influence (float): Search radius for neighbors (meters).
+        neighbours (int): Number of neighbors to use in interpolation.
+        index_array (np.ndarray): Precomputed source indices for target points.
+        weight_array (np.ndarray): Precomputed interpolation weights.
+        valid_output_index (np.ndarray): Valid output target indices.
+
+    Returns:
+        xarray.DataArray: Regridded output with target shape.
+    """
+
+    # Ensure source and target coordinates are 2D
+    lons_src, lats_src = np.meshgrid(source_da.longitude.values, source_da.latitude.values)
+    lons_tgt, lats_tgt = np.meshgrid(target_da.longitude.values, target_da.latitude.values)
+
+    source_def = geometry.SwathDefinition(lons=lons_src, lats=lats_src)
+    target_def = geometry.SwathDefinition(lons=lons_tgt, lats=lats_tgt)
+
+    source_data = source_da.values
+    source_flat = source_data.ravel()
+
+    n_target = target_da.size
+    target_flat = np.full(n_target, np.nan)
+
+    if index_array is not None and valid_output_index is not None:
+        if method == 'nearest':
+            if index_array.ndim == 1:
+                # If index_array is 1D, it means each target point has a single nearest source point
+                nearest_idx = index_array
+            elif index_array.ndim == 2:
+                # If index_array is 2D, take the first column as nearest indices
+                nearest_idx = index_array[:, 0]
+            else:
+                raise ValueError("index_array must be 1D or 2D.")
+            target_flat[valid_output_index] = source_flat[nearest_idx]
+
+        elif method == 'weighted' and weight_array is not None:
+            for i, (src_idxs, weights) in enumerate(zip(index_array, weight_array)):
+                wsum = np.sum(weights)
+                if wsum > 0:
+                    target_flat[valid_output_index[i]] = np.sum(source_flat[src_idxs] * weights) / wsum
+        else:
+            raise ValueError("For 'weighted' method, weight_array must be provided.")
+    else:
+        # Fallback to direct method from pyresample
+        if method == 'nearest':
+            result = resample_nearest(
+                source_geo_def=source_def,
+                data=source_data,
+                target_geo_def=target_def,
+                radius_of_influence=radius_of_influence,
+                fill_value=np.nan
+            )
+            target_flat = result.ravel()
+
+        elif method == 'weighted':
+            result = resample_custom(
+                source_geo_def=source_def,
+                data=source_data,
+                target_geo_def=target_def,
+                radius_of_influence=radius_of_influence,
+                neighbours=neighbours,
+                weight_funcs=None,
+                fill_value=np.nan
+            )
+            target_flat = result.ravel()
+
+        else:
+            raise ValueError("Unsupported method. Use 'nearest' or 'weighted'.")
+
+    # Reshape to match the target grid
+    reshaped = target_flat.reshape(target_da.shape)
+
+    if name_da is None:
+       name_da = source_da.name + '_regridded' if source_da.name else None
+
+    return xr.DataArray(
+        data=reshaped,
+        coords=target_da.coords,
+        dims=target_da.dims,
+        name=name_da,
+        attrs=source_da.attrs
+    )
+# ----------------------------------------------------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------------------------------------------------
+# method to resample the index and weights
+def resample_index(source_da, target_da, radius_of_influence=25000, neighbours=1, epsilon=1e-6):
+    """
+    Compute the index and weights to regrid source_da over target_da using pyresample.
+
+    Parameters:
+        source_da (xarray.DataArray): Source data with lat/lon coordinates.
+        target_da (xarray.DataArray): Target grid with lat/lon coordinates.
+        radius_of_influence (float): Radius in meters to search for neighbours.
+        neighbours (int): Number of neighbours to use in interpolation.
+        epsilon (float): A small number to avoid zero distance issues.
+
+    Returns:
+        tuple: (valid_input_index, valid_output_index, index_array, weight_array)
+    """
+
+    # Extract lat/lon for source and target
+    lons_src = source_da.longitude.values
+    lats_src = source_da.latitude.values
+    lons_tgt = target_da.longitude.values
+    lats_tgt = target_da.latitude.values
+
+    # Handle 1D vs 2D coordinate grids
+    if lons_src.ndim == 1:
+        lons_src, lats_src = np.meshgrid(lons_src, lats_src)
+    if lons_tgt.ndim == 1:
+        lons_tgt, lats_tgt = np.meshgrid(lons_tgt, lats_tgt)
+
+    # Define pyresample SwathDefinition objects
+    source_def = geometry.SwathDefinition(lons=lons_src, lats=lats_src)
+    target_def = geometry.SwathDefinition(lons=lons_tgt, lats=lats_tgt)
+
+    # Compute the lookup index and weights
+    valid_input_index, valid_output_index, index_array, weight_array = get_neighbour_info(
+        source_geo_def=source_def,
+        target_geo_def=target_def,
+        radius_of_influence=radius_of_influence,
+        neighbours=neighbours,
+        epsilon=epsilon,
+        nprocs=1  # Parallelism if desired
+    )
+
+    return valid_input_index, valid_output_index, index_array, weight_array
+# ----------------------------------------------------------------------------------------------------------------------
 
 
-# ------------------------------------------------------------------------------------
-# Method to convert km to decimal degrees
-def km_2_degree(km):
-    earth_radius = 6378.1370
-    deg = 180 * km / (np.pi * earth_radius)
-    return deg
-# ------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
+# method to mask data with a 2D mask
+def mask_data(data_array: xr.DataArray, mask_array: xr.DataArray,
+              mask_value: int = 1, mask_along_dim: str = 'time') -> xr.DataArray:
+    """
+    Apply a 2D mask to a 2D or 3D xarray DataArray.
+
+    Parameters:
+    - data_array: xr.DataArray
+        The data to be masked. Can be 2D (lat, lon) or 3D (time, lat, lon).
+    - mask_array: xr.DataArray
+        A 2D (lat, lon) mask. Values equal to mask_value are retained.
+    - mask_value: int, default=1
+        The value in the mask to retain in the data_array.
+    - mask_along_dim: str, default='time'
+        The dimension along which to broadcast the mask if data_array is 3D.
+        This should match one of the dimensions in data_array.
+
+    Returns:
+    - xr.DataArray
+        The masked data with NaNs where the mask condition is not met.
+    """
+    # Ensure mask is boolean
+    mask_bool = mask_array == mask_value
+
+    # If data_array is 3D, broadcast the mask across the time dimension
+    if data_array.ndim == 3 and mask_along_dim in data_array.dims:
+        # Align the dimensions by expanding the mask
+        mask_bool = mask_bool.expand_dims({mask_along_dim: data_array.sizes[mask_along_dim]}, axis=0)
+        mask_bool = mask_bool.transpose(*data_array.dims)
+
+    # Check shape compatibility
+    if data_array.shape != mask_bool.shape:
+        raise ValueError("Mask shape does not align with data_array shape after broadcasting.")
+
+    return data_array.where(mask_bool)
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+# method to transform data 2D or 3D to time series
+def transform_data2ts(
+    da_var: xr.DataArray,
+    column_name: Union[str, List[str], None] = None,
+    dim_name_time: str = 'time',
+    dim_name_geo_x: str = 'longitude',
+    dim_name_geo_y: str = 'latitude'
+) -> pd.DataFrame:
+    """
+    Convert a 2D or 3D spatial-temporal rainfall DataArray into a time-series DataFrame.
+
+    Parameters:
+        da_var (xr.DataArray): Input DataArray with time and spatial dimensions.
+        column_name (str | list[str] | None): Name(s) of the output column(s).
+        dim_name_time (str): Name of the time dimension.
+        dim_name_geo_x (str): Name of the x spatial dimension.
+        dim_name_geo_y (str): Name of the y spatial dimension.
+
+    Returns:
+        pd.DataFrame: Time-indexed DataFrame with spatially averaged values.
+    """
+    # Input validation
+    if not isinstance(da_var, xr.DataArray):
+        raise TypeError("da_var must be an xarray.DataArray.")
+    if dim_name_time not in da_var.dims:
+        raise ValueError(f"Dimension '{dim_name_time}' not found in DataArray.")
+    if da_var.ndim not in [2, 3]:
+        raise ValueError("da_var must be either 2D or 3D including the time dimension.")
+
+    # Normalize column name
+    if column_name is None:
+        column_name = ['data_time_series']
+    elif isinstance(column_name, str):
+        column_name = [column_name]
+    elif not isinstance(column_name, list):
+        raise TypeError("column_name must be a string, list of strings, or None.")
+
+    # Handle 3D (time + spatial) case
+    if dim_name_geo_x in da_var.dims and dim_name_geo_y in da_var.dims:
+        da_avg = da_var.mean(dim=[dim_name_geo_y, dim_name_geo_x])
+    # Handle 2D (time + one spatial dimension) case
+    elif dim_name_geo_x in da_var.dims:
+        da_avg = da_var.mean(dim=dim_name_geo_x)
+    elif dim_name_geo_y in da_var.dims:
+        da_avg = da_var.mean(dim=dim_name_geo_y)
+    else:
+        raise ValueError("At least one spatial dimension must be present for averaging.")
+
+    # Ensure computation is performed (especially for lazy-loaded data)
+    values_period_avg = da_avg.compute().values
+    times_period_index = pd.DatetimeIndex(da_var[dim_name_time].values)
+
+    # Create DataFrame
+    dframe_var = pd.DataFrame(index=times_period_index, data=values_period_avg,
+                              columns=column_name).fillna(value=pd.NA)
+
+    return dframe_var
+# ----------------------------------------------------------------------------------------------------------------------

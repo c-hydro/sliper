@@ -28,7 +28,7 @@ log_stream = logging.getLogger(logger_name)
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Class DriverGeo
-class DriverGeo:
+class DriverGeoReference:
 
     # ------------------------------------------------------------------------------------------------------------------
     # Initialize class
@@ -109,7 +109,7 @@ class DriverGeo:
     def organize_data(self):
 
         # Starting info
-        log_stream.info(' ----> Organize geographical information ... ')
+        log_stream.info(' ----> Organize reference geographical data ... ')
 
         # read geo data source
         geo_da_src = self.wrap_geo_data(file_name=self.path_name_src, file_mandatory=True)
@@ -131,7 +131,7 @@ class DriverGeo:
         }
 
         # Ending info
-        log_stream.info(' ----> Organize geographical information ... DONE')
+        log_stream.info(' ----> Organize reference geographical data ... DONE')
 
         return geo_data_collections
     # ------------------------------------------------------------------------------------------------------------------

@@ -7,13 +7,13 @@ Date:          '20220320'
 Version:       '1.0.0'
 """
 
-#######################################################################################
-# Library
+# ----------------------------------------------------------------------------------------------------------------------
+# libraries
 import pandas as pd
-#######################################################################################
+# ----------------------------------------------------------------------------------------------------------------------
 
-# -------------------------------------------------------------------------------------
-# Time information
+# ----------------------------------------------------------------------------------------------------------------------
+# time information
 time_type = 'GMT'  # 'GMT', 'local'
 time_units = 'days since 1858-11-17 00:00:00'
 time_calendar = 'gregorian'
@@ -21,7 +21,9 @@ time_format_datasets = "%Y%m%d%H%M"
 time_format_algorithm = '%Y-%m-%d %H:%M'
 time_machine = pd.Timestamp.now
 
-# Logging information
+# log information
+logger_name = 'sliper_indicators_rain_logger'
+logger_file = 'sliper_indicators_rain.txt'
 logger_name_scenarios = 'arpal_soilslips_scenarios_logger'
 logger_file_scenarios = 'arpal_soilslips_scenarios.txt'
 logger_name_predictors = 'arpal_soilslips_predictors_logger'
@@ -29,14 +31,13 @@ logger_file_predictors = 'arpal_soilslips_predictors.txt'
 logger_handle = 'file'  # 'file' or 'stream'
 logger_format = '%(asctime)s %(name)-12s %(levelname)-8s %(message)-80s %(filename)s:[%(lineno)-6s - %(funcName)-20s()] '
 
-# Definition of wkt for projections
+# wkt and epsg information
 proj_epsg = 'EPSG:4326'
 proj_wkt = 'GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",' \
            '6378137,298.257223563,AUTHORITY["EPSG","7030"]],' \
            'AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],' \
            'UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]'
 
-
-# Definition of zip extension
+# zip extension
 zip_extension = '.gz'
-# -------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------

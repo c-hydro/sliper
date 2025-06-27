@@ -1,7 +1,7 @@
 """
 Library Features:
 
-Name:          lib_data_io_tiff
+Name:          lib_data_io_geo
 Author(s):     Fabio Delogu (fabio.delogu@cimafoundation.org)
 Date:          '20250616'
 Version:       '1.0.0'
@@ -13,28 +13,24 @@ import logging
 import os
 import rasterio
 import numpy as np
-import xarray as xr
 
-from copy import deepcopy
 from rasterio.crs import CRS
-from rasterio.transform import Affine
-from osgeo import gdal, gdalconst
 
 from lib_utils_generic import create_darray
 from lib_info_args import logger_name
-from lib_info_args import proj_epsg as proj_default_epsg, proj_wkt as proj_default_wkt
 
 # logging
 logging.getLogger('rasterio').setLevel(logging.WARNING)
 log_stream = logging.getLogger(logger_name)
 
 # debugging
-# import matplotlib.pylab as plt
+import matplotlib.pylab as plt
 # ----------------------------------------------------------------------------------------------------------------------
 
+
 # ----------------------------------------------------------------------------------------------------------------------
-# method to read tiff file
-def read_file_tiff(file_name, output_format='data_array', output_dtype='float32',
+# method to read an ascii or tiff file
+def read_file_grid(file_name, output_format='data_array', output_dtype='float32',
                    var_limit_min=None, var_limit_max=None, var_proj='EPSG:4326'):
 
     try:
@@ -167,117 +163,4 @@ def read_file_tiff(file_name, output_format='data_array', output_dtype='float32'
         log_stream.warning(' ===> Filename "' + os.path.split(file_name)[1] + '"')
 
     return data_obj
-# ----------------------------------------------------------------------------------------------------------------------
-
-
-# ----------------------------------------------------------------------------------------------------------------------
-# method to define file tiff metadata
-def organize_file_tiff(file_data, file_geo_x, file_geo_y, file_geo_transform=None, file_geo_epsg=None):
-
-    file_height, file_width = file_data.shape
-
-    file_geo_x_west = np.min(np.min(file_geo_x))
-    file_geo_x_east = np.max(np.max(file_geo_x))
-
-    file_geo_y_south = np.min(np.min(file_geo_y))
-    file_geo_y_north = np.max(np.max(file_geo_y))
-
-    if file_geo_transform is None:
-        # TO DO: fix the 1/2 pixel of resolution in x and y ... using resolution/2
-        file_geo_transform = rasterio.transform.from_bounds(
-            file_geo_x_west, file_geo_y_south, file_geo_x_east, file_geo_y_north,
-            file_width, file_height)
-
-    if file_geo_epsg is None:
-        file_geo_epsg = deepcopy(proj_default_epsg)
-
-    if not isinstance(file_geo_epsg, str):
-        file_geo_epsg = file_geo_epsg.to_string()
-
-    return file_height, file_width, file_geo_transform, file_geo_epsg
-# ----------------------------------------------------------------------------------------------------------------------
-
-
-# -------------------------------------------------------------------------------------
-# Method to save grid data in geotiff format
-def save_file_tiff(file_name, file_data, file_geo_x, file_geo_y, file_metadata=None, file_epsg_code=None):
-
-    if file_metadata is None:
-        file_metadata = {'description': 'data'}
-
-    # Debug
-    # plt.figure()
-    # plt.imshow(file_data)
-    # plt.colorbar()
-    # plt.show()
-
-    file_data_height, file_data_width = file_data.shape
-
-    file_geo_x_west = np.min(file_geo_x)
-    file_geo_x_east = np.max(file_geo_x)
-    file_geo_y_south = np.min(file_geo_y)
-    file_geo_y_north = np.max(file_geo_y)
-
-    file_data_transform = rasterio.transform.from_bounds(
-        file_geo_x_west, file_geo_y_south, file_geo_x_east, file_geo_y_north,
-        file_data_width, file_data_height)
-
-    if not isinstance(file_data, list):
-        file_data = [file_data]
-
-    file_wkt = deepcopy(proj_default_wkt)
-    try:
-        if isinstance(file_epsg_code, str):
-            file_crs = CRS.from_string(file_epsg_code)
-            file_wkt = file_crs.to_wkt()
-        elif (file_epsg_code is None) or (not isinstance(file_epsg_code, str)):
-            log_stream.warning(' ===> Geographical projection is not defined in string format. '
-                               ' Will be used the Default projection EPSG:4326')
-            file_crs = CRS.from_string('EPSG:4326')
-            file_wkt = file_crs.to_wkt()
-    except BaseException as b_exp:
-        log_stream.warning(' ===> Issue in defining geographical projection. Particularly ' + str(b_exp) +
-                           ' error was fuond. A default wkt definition will be used')
-
-    write_file_tiff(
-        file_name, file_data, file_data_width, file_data_height, file_data_transform, file_wkt,
-        file_metadata=file_metadata)
-# -------------------------------------------------------------------------------------
-
-
-# ----------------------------------------------------------------------------------------------------------------------
-# method to write file tiff
-def write_file_tiff(file_name, file_data, file_wide, file_high, file_geotrans, file_proj,
-                    file_metadata=None, file_format=gdalconst.GDT_Float32):
-
-    if not isinstance(file_data, list):
-        file_data = [file_data]
-
-    if file_metadata is None:
-        file_metadata = {'description_field': 'data'}
-    if not isinstance(file_metadata, list):
-        file_metadata = [file_metadata] * file_data.__len__()
-
-    if isinstance(file_geotrans, Affine):
-        file_geotrans = file_geotrans.to_gdal()
-
-    file_n = file_data.__len__()
-    dset_handle = gdal.GetDriverByName('GTiff').Create(file_name, file_wide, file_high, file_n, file_format,
-                                                       options=['COMPRESS=DEFLATE'])
-    dset_handle.SetGeoTransform(file_geotrans)
-    dset_handle.SetProjection(file_proj)
-
-    for file_id, (file_obj_step, file_metadata_step) in enumerate(zip(file_data, file_metadata)):
-
-        if isinstance(file_obj_step, xr.DataArray):
-            file_data_step = file_obj_step.values
-        elif isinstance(file_obj_step, np.ndarray):
-            file_data_step = deepcopy(file_obj_step)
-        else:
-            log_stream.error(' ===> Data type is not allowed. Only xr.DataArray and np.ndarray are supported.')
-            raise NotImplementedError('Case not implemented yet')
-
-        dset_handle.GetRasterBand(file_id + 1).WriteArray(file_data_step)
-        dset_handle.GetRasterBand(file_id + 1).SetMetadata(file_metadata_step)
-    del dset_handle
 # ----------------------------------------------------------------------------------------------------------------------

@@ -83,7 +83,7 @@
   "time": {
     "__comment__": "(1) frequency=D, period=n, rounding=D :: (2): frequency=H, period=1, rounding=H",
     "time_now": "2023-01-15 23:45",
-    "time_period": 24,
+    "time_period": 60,
     "time_frequency": "H",
     "time_rounding": "H",
     "time_start": null,

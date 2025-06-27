@@ -9,39 +9,16 @@
       "algorithm": "Algorithm developed by ARPAL and CIMA Research Foundation"
     },
     "flags": {
-      "__comment__": "running_mode values: organizer, analyzer, publisher",
-      "running_mode": ["analyzer","publisher"],
-      "updating_static_ancillary_grid": false,
-      "updating_static_ancillary_point_weather_stations": false,
-      "updating_static_ancillary_point_soil_slips": false,
-      "updating_dynamic_ancillary_rain": false,
-      "updating_dynamic_ancillary_sm": false,
-      "updating_dynamic_destination_indicators": true,
-      "updating_dynamic_destination_scenarios": true
+      "update_static": true,
+      "update_dynamic_ancillary_grid": false,
+      "update_dynamic_ancillary_ts": false,
+      "update_dynamic_destination": true
     },
-    "dependencies": {
-      "__comment__": "GDAL_DATA must be defined from the reference conda environment",
-      "LD_LIBRARY_PATH" : [
-        "/home/fabio/Documents/Work_Area/Code_Development/Library/gdal-3.2.1/lib/",
-        "/home/fabio/Documents/Work_Area/Code_Development/Library/proj-8.0.0/lib/"
-      ],
-      "PATH" : [
-        "/home/fabio/Documents/Work_Area/Code_Development/Library/gdal-3.2.1/bin/",
-        "/home/fabio/Documents/Work_Area/Code_Development/Library/proj-8.0.0/bin/"
-      ],
-      "GDAL_DATA_SCRIPT": "/home/fabio/Documents/Work_Area/Code_Development/Library/gdal-3.2.1/share/gdal/",
-      "GDAL_DATA": "/home/fabio/Desktop/PyCharm_ARPAL/conda_p37/envs/soilslips_libraries/share/gdal/",
-      "PROJ_LIB": "/home/fabio/Desktop/Library/proj-8.0.0/share/proj/"
-    },
+    "dependencies": {},
     "ancillary": {
-      "options": {
+      "parameters": {
         "point_circle_radius": 10,
         "point_grid_cell_size": 10
-      },
-      "graph": {
-        "filter_season": true,
-        "filter_event_min": 0,
-        "filter_event_max": null
       },
       "group" : {
         "alert_area_a": {
@@ -50,13 +27,9 @@
           "warning_threshold" : {"white": [0,0], "green": [1,2], "yellow": [3,5], "orange": [6,13], "red": [14,null]},
           "warning_index" : {"white": 0, "green": 1, "yellow": 2, "orange": 3, "red": 4},
           "catchment": ["Centa", "Imperiese", "Ponente", "Finalese"],
-          "rain_datasets" : {
+          "datasets" : {
             "search_period": ["3H", "6H", "12H", "24H"],
             "search_type": ["left"]
-          },
-          "sm_datasets" : {
-            "search_period": ["2H", "24H"],
-            "search_type": ["left", "right"]
           }
         },
         "alert_area_b": {
@@ -65,13 +38,9 @@
           "warning_threshold" : {"white": [0,0], "green": [1,2], "yellow": [3,5], "orange": [6,13], "red": [14,null]},
           "warning_index" : {"white": 0, "green": 1, "yellow": 2, "orange": 3, "red": 4},
           "catchment": ["Savonese", "CentroPonente", "PonenteGenovese", "LevanteGenovese"],
-          "rain_datasets" : {
+          "datasets" : {
             "search_period": ["3H", "6H", "12H", "24H"],
             "search_type": ["left"]
-          },
-          "sm_datasets" : {
-            "search_period": ["2H", "24H"],
-            "search_type": ["left", "right"]
           }
         },
         "alert_area_c": {
@@ -80,13 +49,9 @@
           "warning_threshold" : {"white": [0,0], "green": [1,2], "yellow": [3,5], "orange": [6,13], "red": [14,null]},
           "warning_index" : {"white": 0, "green": 1, "yellow": 2, "orange": 3, "red": 4},
           "catchment": ["Magra"],
-          "rain_datasets" : {
+          "datasets" : {
             "search_period": ["3H", "6H", "12H", "24H"],
             "search_type": ["left"]
-          },
-          "sm_datasets" : {
-            "search_period": ["2H", "24H"],
-            "search_type": ["left", "right"]
           }
         },
         "alert_area_d": {
@@ -95,13 +60,9 @@
           "warning_threshold" : {"white": [0,0], "green": [1,2], "yellow": [3,5], "orange": [6,13], "red": [14,null]},
           "warning_index" : {"white": 0, "green": 1, "yellow": 2, "orange": 3, "red": 4},
           "catchment": ["BormidaS", "BormidaM", "Erro", "OrbaStura"],
-          "rain_datasets" : {
+          "datasets" : {
             "search_period": ["3H", "6H", "12H", "24H"],
             "search_type": ["left"]
-          },
-          "sm_datasets" : {
-            "search_period": ["2H", "24H"],
-            "search_type": ["left", "right"]
           }
         },
         "alert_area_e": {
@@ -110,13 +71,9 @@
           "warning_threshold" : {"white": [0,0], "green": [1,2], "yellow": [3,5], "orange": [6,13], "red": [14,null]},
           "warning_index" : {"white": 0, "green": 1, "yellow": 2, "orange": 3, "red": 4},
           "catchment": ["Scrivia", "AvetoTrebbia"],
-          "rain_datasets" : {
+          "datasets" : {
             "search_period": ["3H", "6H", "12H", "24H"],
             "search_type": ["left"]
-          },
-          "sm_datasets" : {
-            "search_period": ["2H", "24H"],
-            "search_type": ["left", "right"]
           }
         }
       }
@@ -126,30 +83,102 @@
       "month_name": "string_month",
       "alert_area_name": "string_alert_area",
       "season_name": "string_season",
-      "var_rain": "string_var_rain",
-      "var_sm": "string_var_sm",
+      "var_name": "string_variable",
       "catchment_name": "string_catchment",
-      "run_datetime": "%Y%m%d",
-      "run_sub_path_time": "%Y/%m/%d/",
-      "source_rain_sub_path_time": "%Y/%m/%d/",
-      "source_rain_datetime": "%Y%m%d%H%M",
-      "source_sm_sub_path_time": "%Y/%m/%d/",
-      "source_sm_datetime": "%Y%m%d%H%M",
-      "ancillary_rain_sub_path_time": "%Y/%m/%d/",
-      "ancillary_rain_datetime": "%Y%m%d%H%M",
-      "ancillary_sm_sub_path_time": "%Y/%m/%d/",
-      "ancillary_sm_datetime": "%Y%m%d%H%M",
-      "ancillary_analysis_sub_path_time": "%Y/%m/%d/",
-      "ancillary_analysis_datetime": "%Y%m%d%H%M",
-      "destination_indicators_sub_path_time": "%Y/%m/%d/",
-      "destination_indicators_datetime": "%Y%m%d%H%M",
-      "destination_scenarios_sub_path_time": "",
-      "destination_scenarios_datetime": "%Y%m%d%H%M",
-      "destination_scenarios_datetime_from": "from_%Y%m%d%H%M",
-      "destination_scenarios_datetime_to": "to_%Y%m%d%H%M"
+      "source_sub_path_time": "%Y/%m/%d/",
+      "source_datetime": "%Y%m%d%H%M",
+      "ancillary_sub_path_time": "%Y/%m/%d/",
+      "ancillary_datetime": "%Y%m%d%H%M",
+      "destination_sub_path_time": "%Y/%m/%d/",
+      "destination_datetime": "%Y%m%d%H%M"
     }
   },
   "data": {
+    "static" : {
+      "reference": {
+        "source": {
+          "folder_name": "/home/fabio/Desktop/Workspace/sliper/ws/data_static/datasets/",
+          "file_name": "grid_rain.tiff"
+        },
+        "destination": {
+          "folder_name": "/home/fabio/Desktop/Workspace/sliper/ws/data_static/reference/",
+          "file_name": "geo_liguria.tiff"
+        }
+      },
+      "alert_area": {
+        "source": {
+          "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_static/alert_area/",
+          "file_name": "alert_area_epsg4326.shp"
+        },
+        "destination": {
+          "workspace_data": {
+            "folder_name": "/home/fabio/Desktop/Workspace/sliper/ws/data_static/alert_area/",
+            "file_name": "geo_alert_area.workspace"
+          },
+          "vector_data": {
+            "folder_name": "/home/fabio/Desktop/Workspace/sliper/ws/data_static/alert_area/",
+            "file_name": "geo_alert_area_{alert_area_name}.shp"
+          },
+          "mask_data": {
+              "folder_name": "/home/fabio/Desktop/Workspace/sliper/ws/data_static/alert_area/",
+              "file_name": "geo_alert_area_{alert_area_name}.tiff"
+          },
+          "index_grid_data": {
+              "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_static/alert_area/",
+              "file_name": "index_grid_alert_area_{alert_area_name}.workspace"
+            },
+          "index_circle_data": {
+              "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_static/alert_area/",
+              "file_name": "index_circle_alert_area_{alert_area_name}.workspace"
+          }
+        }
+      }
+    },
+    "dynamic": {
+      "source": {
+        "__comment__": "type: grid [nc, tif]",
+        "folder_name": "/home/fabio/Desktop/Workspace/sliper/ws/data_dynamic/destination/rain/{source_sub_path_time}",
+        "file_name": "rain_{source_datetime}.tiff",
+        "type": "grid",
+        "format": "tif"
+      },
+      "ancillary": {
+        "grid": {
+          "folder_name": "/home/fabio/Desktop/Workspace/sliper/ws/data_dynamic/ancillary/rain/{ancillary_sub_path_time}",
+          "file_name": "indicators_rain_{ancillary_datetime}_grid.workspace"
+        },
+        "ts": {
+          "folder_name": "/home/fabio/Desktop/Workspace/sliper/ws/data_dynamic/ancillary/rain/{ancillary_sub_path_time}",
+          "file_name": "indicators_rain_{ancillary_datetime}_ts.workspace"
+        }
+      },
+      "destination": {
+        "__comment__": "type: time_series [csv]",
+        "folder_name": "/home/fabio/Desktop/Workspace/sliper/ws/data_dynamic/destination/indicators_rain/{destination_sub_path_time}",
+        "file_name": "indicators_rain_{destination_datetime}_{alert_area_name}.csv",
+        "type": "time_series",
+        "format": "csv"
+      }
+    }
+  },
+  "tmp": {
+    "folder_name": "/home/fabio/Desktop/Workspace/sliper/ws/tmp/",
+    "file_name": null
+  },
+  "log": {
+    "folder_name": "/home/fabio/Desktop/Workspace/sliper/ws/log/",
+    "file_name": "sliper_indicators_rain_log.txt"
+  },
+  "time": {
+    "__comment__": "(1) frequency=D, period=n, rounding=D :: (2): frequency=H, period=1, rounding=H",
+    "time_now": "2023-01-15 23:45",
+    "time_period": 4,
+    "time_frequency": "H",
+    "time_rounding": "H",
+    "time_start": null,
+    "time_end": null
+  },
+  "data_OLD": {
     "static" : {
       "source" : {
         "soil_slips" : {
@@ -181,22 +210,6 @@
             "primary_data": {
               "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_static/alert_area/",
               "file_name": "alert_area_epsg4326.shp"
-            }
-          },
-          "catchment": {
-            "primary_data": {
-              "terrain_data": {
-                "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_static/catchments_realtime/{catchment_name}Domain/",
-                "file_name": "{catchment_name}Domain.dem.txt"
-              },
-              "cn_data": {
-                "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_static/catchments_realtime/{catchment_name}Domain/",
-                "file_name": "{catchment_name}Domain.cn.txt"
-              },
-              "channels_network_data": {
-                "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_static/catchments_realtime/{catchment_name}Domain/",
-                "file_name": "{catchment_name}Domain.choice.txt"
-              }
             }
           }
         },
@@ -250,118 +263,25 @@
               "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_static/alert_area/",
               "file_name": "index_circle_alert_area_{alert_area_name}.workspace"
             }
-          },
-          "catchment": {
-            "primary_data": {
-              "terrain_data": {
-                "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_static/catchments_realtime/{catchment_name}Domain/",
-                "file_name": "geo_catchment_{catchment_name}_terrain.workspace"
-              },
-              "cn_data": {
-                "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_static/catchments_realtime/{catchment_name}Domain/",
-                "file_name": "geo_catchment_{catchment_name}_cn.workspace"
-              },
-              "channels_network_data": {
-                "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_static/catchments_realtime/{catchment_name}Domain/",
-                "file_name": "geo_catchment_{catchment_name}_channels_network.workspace"
-              }
-            }
-          }
-        },
-        "soil_slips": {
-          "database_data" : {
-            "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_static/db_soil_slips/",
-            "file_name": "soil_slips_database.workspace"
-          }
-        },
-        "weather_stations": {
-          "registry_data": {
-            "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_static/db_weather_stations/",
-            "file_name": "weather_stations_data_registry.csv"
-          },
-          "registry_tree": {
-            "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_static/db_weather_stations/",
-            "file_name": "weather_stations_data_tree.workspace"
           }
         }
       }
     },
     "dynamic": {
-      "time": {
-        "rain_data": {
-          "time_period": 24,
-          "time_frequency": "H",
-          "time_rounding": "H"
-        },
-        "soil_moisture_data": {
-          "time_period": 24,
-          "time_frequency": "H",
-          "time_rounding": "H"
-        }
-      },
       "source": {
-        "rain_data": {
-          "__comment__": "file_type: grid, point",
-          "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_dynamic/source/rain_grid_tiff/{source_rain_sub_path_time}/",
-          "file_name": "Rain_{source_rain_datetime}.tif",
-          "obj_type": "grid",
-          "obj_geo_reference": "region:primary_data:rain_data"
-        },
-        "soil_moisture_data": {
-          "__comment__": "file_type: grid_nc [hmc.output-grid.{source_sm_datetime}.nc.gz], grid_binary [{catchment_name}DomainV_{source_sm_datetime}.gz]",
-          "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/archive_nc/{catchment_name}Domain/weather_stations_realtime/{source_sm_sub_path_time}/gridded/",
-          "file_name": "hmc.output-grid.{source_sm_datetime}.nc.gz",
-          "obj_type": "grid_nc",
-          "obj_geo_reference": "region:primary_data:soil_moisture_data"
-        }
+        "folder_name": "/home/fabio/Desktop/Workspace/sliper/ws/data_dynamic/destination/rain/{destination_sub_path_time}",
+        "file_name": "rain_{destination_datetime}.tiff"
       },
       "ancillary": {
-        "rain_data": {
-          "__comment__": "file format allowed: nc, tiff",
-          "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_dynamic/ancillary/rain/{ancillary_rain_sub_path_time}",
-          "file_name": "rain_{ancillary_rain_datetime}.tiff"
-        },
-        "soil_moisture_data": {
-          "__comment__": "file format allowed: nc, tiff",
-          "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_dynamic/ancillary/soil_moisture/{ancillary_sm_sub_path_time}",
-          "file_name": "sm_{alert_area_name}_{ancillary_sm_datetime}.tiff"
-        }
+        "__comment__": "rain indicators in csv format",
+        "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_dynamic/outcome/indicators/{destination_indicators_sub_path_time}",
+        "file_name": "indicators_{destination_indicators_datetime}_{alert_area_name}.workspace"
       },
       "destination": {
-        "indicators_data" : {
-          "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_dynamic/outcome/indicators/{destination_indicators_sub_path_time}",
-          "file_name": "indicators_{destination_indicators_datetime}_{alert_area_name}.workspace"
-        },
-        "scenarios_data" : {
-          "__comment__": "multiple_file: scenarios_{destination_scenarios_datetime_from}_{destination_scenarios_datetime_to}_{alert_area_name}.csv",
-          "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_dynamic/outcome/scenarios_datasets/{destination_scenarios_sub_path_time}",
-          "file_name": "scenarios_{destination_scenarios_datetime_from}_{destination_scenarios_datetime_to}.csv"
-        }
+        "__comment__": "rain indicators in csv format",
+        "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_dynamic/outcome/indicators/{destination_indicators_sub_path_time}",
+        "file_name": "indicators_{destination_indicators_datetime}_{alert_area_name}.csv"
       }
     }
-  },
-  "graph": {
-    "rain2sm_graph": {
-      "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_dynamic/outcome/scenarios_graphs/{destination_scenarios_sub_path_time}",
-      "file_name": "scenarios_rain2sm_{destination_scenarios_datetime_from}_{destination_scenarios_datetime_to}_{alert_area_name}_rain{var_rain}_sm{var_sm}_{season_name}.tiff",
-      "obj_active": true
-    }
-  },
-  "tmp": {
-    "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/tmp/",
-    "file_name": null
-  },
-  "log": {
-    "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/log/",
-    "file_name": "soil_slips_scenarios_realtime_log.txt"
-  },
-  "time": {
-    "__comment__": "(1) frequency=D, period=n, rounding=D :: (2): frequency=H, period=1, rounding=H",
-    "time_now": "2023-01-15 23:45",
-    "time_period": 4,
-    "time_frequency": "H",
-    "time_rounding": "H",
-    "time_start": null,
-    "time_end": null
   }
 }

@@ -17,7 +17,7 @@ import os
 from numpy import zeros, min, max, flipud, savetxt
 
 from lib_utils_system import create_filename_tmp
-from lib_utils_process import exec_process
+from lib_utils_process_OLD import exec_process_OLD
 from lib_utils_system import random_string, make_folder
 
 from lib_info_args import logger_name_scenarios as logger_name
@@ -113,7 +113,7 @@ def interp_point2map(data_in_1d, geox_in_1d, geoy_in_1d, geox_out_2d, geoy_out_2
     # os.system(line_command)
 
     # Execute algorithm
-    [std_out, std_err, std_exit] = exec_process(command_line=line_command, command_path=folder_tmp)
+    [std_out, std_err, std_exit] = exec_process_OLD(command_line=line_command, command_path=folder_tmp)
 
     # Read data in tiff format and get values
     data_out_obj = rasterio.open(file_name_tiff)

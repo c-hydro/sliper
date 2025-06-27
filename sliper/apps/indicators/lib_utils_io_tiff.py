@@ -10,7 +10,6 @@ Version:       '1.5.0'
 # Libraries
 import logging
 import os
-import ogr
 import numpy as np
 import rasterio
 
@@ -18,7 +17,7 @@ from copy import deepcopy
 from rasterio.crs import CRS
 from osgeo import ogr
 
-from lib_data_io_tiff import write_file_tiff
+from lib_data_io_tiff_OLD import write_file_tiff
 from lib_data_io_shp import convert_shp_2_tiff
 from lib_utils_io_obj import create_darray_2d
 

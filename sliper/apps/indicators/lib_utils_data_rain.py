@@ -1,9 +1,9 @@
 """
 Library Features:
 
-Name:          lib_utils_data_grid_rain
+Name:          lib_utils_data_rain
 Author(s):     Fabio Delogu (fabio.delogu@cimafoundation.org)
-Date:          '20220320'
+Date:          '20250616'
 Version:       '1.0.0'
 """
 
@@ -18,9 +18,8 @@ import xarray as xr
 
 from copy import deepcopy
 from rasterio.crs import CRS
-from osgeo import ogr
 
-from lib_data_io_tiff import write_file_tiff
+from lib_data_io_tiff_OLD import write_file_tiff
 
 from lib_utils_time import split_time_window
 from lib_utils_io_obj import write_dset, create_darray_2d, create_darray_3d
@@ -28,7 +27,7 @@ from lib_analysis_interpolation_point import interp_point2map
 from lib_analysis_interpolation_grid import interp_grid2map
 
 from lib_info_args import proj_wkt as proj_default_wkt
-from lib_info_args import logger_name_scenarios as logger_name
+from lib_info_args import logger_name
 
 # Logging
 log_stream = logging.getLogger(logger_name)
@@ -212,18 +211,16 @@ def compute_rain_maps_accumulated(var_da_source,  coord_name_time='time', time_w
 
     if time_direction == 'left':
         var_da_sorted = var_da_source.sortby(time_coords, ascending=False)
-        # var_da_test = var_da_sorted.resample(time=time_window, label='right', closed='right').sum(coord_name_time)
-        var_da_resampled = var_da_sorted.rolling(time=time_period, center=False).sum()
+        var_da_accumulated = var_da_sorted.rolling(time=time_period, center=False).sum()
     elif time_direction == 'right':
         var_da_sorted = var_da_source.sortby(time_coords, ascending=True)
-        # var_da_test = var_da_sorted.resample(time=time_window, label='right', closed='right').sum(coord_name_time)
-        var_da_resampled = var_da_sorted.rolling(time=time_period, center=False).sum()
+        var_da_accumulated = var_da_sorted.rolling(time=time_period, center=False).sum()
     else:
         log_stream.error(' ===> Time direction "' + time_direction + '" flag is not allowed')
         raise IOError('Available flags for temporal direction are: "right" and "left"')
 
-    var_da_resampled.attrs = {'time_from': time_stamp_start, 'time_to': time_stamp_end,
-                              'time_window': time_window, 'time_direction': time_direction}
+    var_da_accumulated.attrs = {'time_from': time_stamp_start, 'time_to': time_stamp_end,
+                                'time_window': time_window, 'time_direction': time_direction}
 
     # Debug
     # plt.figure()
@@ -231,7 +228,7 @@ def compute_rain_maps_accumulated(var_da_source,  coord_name_time='time', time_w
     # plt.colorbar()
     # plt.show()
 
-    return var_da_resampled
+    return var_da_accumulated
 
 # -------------------------------------------------------------------------------------
 
@@ -283,10 +280,48 @@ def compute_rain_ts_accumulated(dframe_var, column_name=None,
     return series_var
 # -------------------------------------------------------------------------------------
 
+import warnings
+
+# ----------------------------------------------------------------------------------------------------------------------
+# method to compute rain statistics
+def compute_data_statistics(da_var, column_name=None, metrics=None):
+    if column_name is None:
+        column_name = ['data_time_series']
+    if not isinstance(column_name, list):
+        column_name = [column_name]
+
+    if metrics is None:
+        metrics = ['avg', 'max']
+
+    # Supported metrics
+    supported_metrics = {'avg', 'max', 'min', 'first', 'last'}
+    results = {}
+
+    for metric in metrics:
+        if metric not in supported_metrics:
+            warnings.warn(f"Metric '{metric}' is not supported and will be skipped.", UserWarning)
+            continue
+
+        if metric == 'avg':
+            results['avg'] = float(da_var[column_name].mean())
+        elif metric == 'max':
+            results['max'] = float(da_var[column_name].max())
+        elif metric == 'min':
+            results['min'] = float(da_var[column_name].min())
+        elif metric == 'first':
+            time_first = da_var.index[0]
+            results['first'] = float(da_var.loc[time_first].values[0])
+        elif metric == 'last':
+            time_last = da_var.index[-1]
+            results['last'] = float(da_var.loc[time_last].values[0])
+
+    return results
+
+# ----------------------------------------------------------------------------------------------------------------------
 
 # -------------------------------------------------------------------------------------
 # Method to compute rain statistics
-def compute_rain_statistics(da_var, column_name=None,
+def compute_rain_statistics_OLD(da_var, column_name=None,
                             tag_first_value=False, tag_last_value=False, tag_avg_value=True,
                             tag_max_value=True, tag_min_value=False):
 
@@ -344,8 +379,11 @@ def compute_rain_peaks(var_da, var_point_collections, var_analysis='max'):
     peaks_dframe = peaks_dframe.dropna(how='all')
 
     peaks_max = peaks_dframe.to_numpy().max()
+    peaks_mean = peaks_dframe.to_numpy().mean()
 
-    return peaks_max, peaks_dframe
+    peaks_metrics = {'max': peaks_max, 'avg': peaks_mean}
+
+    return peaks_dframe, peaks_metrics
 
 # -------------------------------------------------------------------------------------
 

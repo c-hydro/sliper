@@ -402,6 +402,7 @@ class DriverGeoGrid:
 
                                         shape_dframe, shape_collections, shape_geoms = read_file_shp(file_path_src)
 
+                                        os.makedirs(self.folder_name_tmp, exist_ok=True)
                                         file_path_tmp = create_filename_tmp(folder=self.folder_name_tmp)
                                         convert_shp_2_tiff(file_path_src, file_path_tmp,
                                                            pixel_size=0.001, burn_value=1, epsg=4326)
@@ -815,27 +816,26 @@ class DriverGeoGrid:
         # Starting info
         log_stream.info(' ----> Organize grid information ... ')
 
-        # Read geo catchment datasets
-        dset_geo_catchment = self.get_geo_data(
-            self.src_collection_geo, self.dst_collection_geo, data_map_pivot=self.catchment_tag,
-            data_keys_delimiter=self.obj_keys_delimiter, data_level=2)
         # Read geo reference datasets
         dset_geo_reference = self.get_geo_data(
             self.src_collection_geo, self.dst_collection_geo, data_map_pivot=self.reference_tag,
             data_keys_delimiter=self.obj_keys_delimiter, data_level=1)
+
         # Read geo region datasets
         dset_geo_region = self.get_geo_data(
             self.src_collection_geo, self.dst_collection_geo, data_map_pivot=self.region_tag,
-            data_keys_delimiter=self.obj_keys_delimiter, data_level=1)
-        # Read geo alert area datasets
-        dset_geo_alert_area = self.get_geo_data(
-            self.src_collection_geo, self.dst_collection_geo, data_map_pivot=self.alert_area_tag,
             data_keys_delimiter=self.obj_keys_delimiter, data_level=1)
 
         # Compute ancillary region datasets (indexes)
         dset_geo_region = self.compute_ancillary_region(
             dset_geo_region, dset_geo_reference, self.dst_collection_geo,
             pivot_name_src=self.region_pivot_name_src, pivot_name_dst_index=self.region_pivot_name_dst_index)
+
+        # Read geo alert area datasets
+        dset_geo_alert_area = self.get_geo_data(
+            self.src_collection_geo, self.dst_collection_geo, data_map_pivot=self.alert_area_tag,
+            data_keys_delimiter=self.obj_keys_delimiter, data_level=1)
+
 
         # Compute ancillary alert area datasets (mask, indexes ... )
         dset_geo_alert_area = self.compute_ancillary_alert_area(
@@ -846,11 +846,28 @@ class DriverGeoGrid:
             pivot_name_dst_idx_grid=self.alert_area_pivot_name_dst_idx_grid,
             pivot_name_dst_idx_circle=self.alert_area_pivot_name_dst_idx_circle)
 
+        # Read geo catchment datasets
+        dset_geo_catchment = self.get_geo_data(
+            self.src_collection_geo, self.dst_collection_geo, data_map_pivot=self.catchment_tag,
+            data_keys_delimiter=self.obj_keys_delimiter, data_level=2)
+
+
+
+
+
+
+
+
         # Create geo data collections
         geo_data_collections = {self.region_tag: dset_geo_region,
                                 self.alert_area_tag: dset_geo_alert_area,
                                 self.reference_tag: dset_geo_reference,
                                 self.catchment_tag: dset_geo_catchment}
+
+        #data_geo_reference_grid = self.data_geo_reference_grid
+        #data_geo_alert_area_mask = self.data_geo_alert_area_mask
+        #data_geo_alert_area_idx_circle = self.data_geo_alert_area_idx_circle
+
 
         # Ending info
         log_stream.info(' ----> Organize grid information ... DONE')
