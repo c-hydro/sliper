@@ -3,13 +3,13 @@ Library Features:
 
 Name:          lib_data_io_shp
 Author(s):     Fabio Delogu (fabio.delogu@cimafoundation.org)
-Date:          '20220105'
+Date:          '20250709'
 Version:       '1.0.0'
 """
 
 
 # -------------------------------------------------------------------------------------
-# Libraries
+# libraries
 import logging
 import warnings
 import os
@@ -22,18 +22,18 @@ from lib_data_io_geo import read_file_grid
 from lib_utils_generic import create_filename_tmp
 
 from lib_info_args import proj_wkt as proj_default_wkt
-from lib_info_args import logger_name_predictors as logger_name
+from lib_info_args import logger_name
 
 from shapely.errors import ShapelyDeprecationWarning
 
-# Logging
+# logging
 warnings.filterwarnings("ignore", category=ShapelyDeprecationWarning)
 logging.getLogger("fiona").setLevel(logging.WARNING)
 log_stream = logging.getLogger(logger_name)
 # -------------------------------------------------------------------------------------
 
 
-# -------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 # Method to read shape file
 def read_file_shp(file_name):
 
@@ -48,10 +48,10 @@ def read_file_shp(file_name):
         shape_polygons[shape_id] = shape_coords
 
     return shape_dframe, shape_polygons, shape_geoms
-# -------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 
 
-# -------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 # Convert polygons to shape file
 def convert_polygons_2_shp(shape_polygon, shape_file):
 
@@ -79,10 +79,10 @@ def convert_polygons_2_shp(shape_polygon, shape_file):
 
     # Save and close everything
     ds = layer = feat = geom = None
-# -------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 
 
-# -------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 # Method to transform shape file to tiff
 def convert_shp_2_tiff(shape_file, tiff_file=None, tiff_remove=True,
                        pixel_size=0.1, burn_value=1, epsg=4326, folder_tmp=None):
@@ -159,4 +159,4 @@ def convert_shp_2_tiff(shape_file, tiff_file=None, tiff_remove=True,
 
     return da
 
-# -------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------

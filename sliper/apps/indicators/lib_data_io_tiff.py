@@ -172,7 +172,7 @@ def read_file_tiff(file_name, output_format='data_array', output_dtype='float32'
 
 # ----------------------------------------------------------------------------------------------------------------------
 # method to define file tiff metadata
-def organize_file_tiff(file_data, file_geo_x, file_geo_y, file_geo_transform=None, file_geo_epsg=None):
+def organize_file_tiff_OLD(file_data, file_geo_x, file_geo_y, file_geo_transform=None, file_geo_epsg=None):
 
     file_height, file_width = file_data.shape
 
@@ -200,7 +200,7 @@ def organize_file_tiff(file_data, file_geo_x, file_geo_y, file_geo_transform=Non
 
 # -------------------------------------------------------------------------------------
 # Method to save grid data in geotiff format
-def save_file_tiff(file_name, file_data, file_geo_x, file_geo_y, file_metadata=None, file_epsg_code=None):
+def save_file_tiff_OLD(file_name, file_data, file_geo_x, file_geo_y, file_metadata=None, file_epsg_code=None):
 
     if file_metadata is None:
         file_metadata = {'description': 'data'}
@@ -247,7 +247,7 @@ def save_file_tiff(file_name, file_data, file_geo_x, file_geo_y, file_metadata=N
 
 # ----------------------------------------------------------------------------------------------------------------------
 # method to write file tiff
-def write_file_tiff(file_name, file_data, file_wide, file_high, file_geotrans, file_proj,
+def write_file_tiff_OLD(file_name, file_data, file_wide, file_high, file_geotrans, file_proj,
                     file_metadata=None, file_format=gdalconst.GDT_Float32):
 
     if not isinstance(file_data, list):

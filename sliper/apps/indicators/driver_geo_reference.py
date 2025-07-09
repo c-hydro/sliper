@@ -1,7 +1,7 @@
 """
 Class Features
 
-Name:          driver_geo
+Name:          driver_geo_reference
 Author(s):     Fabio Delogu (fabio.delogu@cimafoundation.org)
 Date:          '20250616'
 Version:       '1.0.0'

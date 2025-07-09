@@ -1,7 +1,7 @@
 """
 Class Features
 
-Name:          driver_geo
+Name:          driver_geo_alert_area
 Author(s):     Fabio Delogu (fabio.delogu@cimafoundation.org)
 Date:          '20250616'
 Version:       '1.0.0'
@@ -18,7 +18,6 @@ import xarray as xr
 from copy import deepcopy
 
 from lib_data_io_shp import read_file_shp, convert_shp_2_tiff, convert_polygons_2_shp
-from lib_data_io_geo import read_file_grid
 from lib_data_io_pickle import read_obj, write_obj
 from lib_utils_geo import resample_index, resample_data, compute_grid_from_bounds, find_points_with_buffer
 from lib_utils_generic import create_filename_tmp, fill_template_string

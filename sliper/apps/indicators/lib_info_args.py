@@ -3,7 +3,7 @@ Library Features:
 
 Name:          lib_info_args
 Author(s):     Fabio Delogu (fabio.delogu@cimafoundation.org)
-Date:          '20220320'
+Date:          '20250709'
 Version:       '1.0.0'
 """
 
@@ -24,10 +24,6 @@ time_machine = pd.Timestamp.now
 # log information
 logger_name = 'sliper_indicators_rain_logger'
 logger_file = 'sliper_indicators_rain.txt'
-logger_name_scenarios = 'arpal_soilslips_scenarios_logger'
-logger_file_scenarios = 'arpal_soilslips_scenarios.txt'
-logger_name_predictors = 'arpal_soilslips_predictors_logger'
-logger_file_predictors = 'arpal_soilslips_predictors.txt'
 logger_handle = 'file'  # 'file' or 'stream'
 logger_format = '%(asctime)s %(name)-12s %(levelname)-8s %(message)-80s %(filename)s:[%(lineno)-6s - %(funcName)-20s()] '
 
