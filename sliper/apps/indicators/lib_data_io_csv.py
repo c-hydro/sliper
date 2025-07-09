@@ -64,16 +64,15 @@ def write_file_csv(
     if orientation == 'rows':
         df = df.T  # transpose to write each key as a row
 
-        # Apply float formatting manually
-        def format_val(v):
-            if isinstance(v, float):
-                return float_format % v
-            return v
+        # suppose format_val is your function for formatting or transforming values
+        def format_val(x):
+            return f"{x:.2f}" if isinstance(x, (int, float)) else x
 
-        df = df.applymap(format_val)
+        # Apply element-wise using map on each column
+        df = df.apply(lambda col: col.map(format_val))
 
         df.to_csv(filename, header=False, float_format=float_format, sep=csv_sep)
     else:
-        df.to_csv(filename, index=False, float_format=float_format, sep=csv_sep)
+        df.to_csv(filename, index=True, float_format=float_format, sep=csv_sep)
 
 # ----------------------------------------------------------------------------------------------------------------------

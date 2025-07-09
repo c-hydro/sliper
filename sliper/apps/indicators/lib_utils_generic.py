@@ -9,14 +9,13 @@ Version:       '1.0.0'
 # ----------------------------------------------------------------------------------------------------------------------
 # libraries
 import logging
-import warnings
-import os
 import re
 import tempfile
 import numpy as np
 import xarray as xr
 import pandas as pd
 
+from datetime import datetime
 from typing import Dict, Any, Optional, Union, List
 from copy import deepcopy
 
@@ -25,11 +24,31 @@ from lib_info_args import logger_name
 # logging
 log_stream = logging.getLogger(logger_name)
 
-# initialize variables (if
+# initialize variables
 attrs_decoded = []
 # ----------------------------------------------------------------------------------------------------------------------
 
+# ----------------------------------------------------------------------------------------------------------------------
+# method to add fields to a flattened dictionary
+def fields2dict(fields: dict, extra_fields: dict = None, extra_formats: dict = None) -> Dict[str, Any]:
+    # Add extra fields
+    if (extra_fields is not None) and extra_fields:
+        for key, value in extra_fields.items():
 
+            fmt = None
+            if key in list(extra_formats.keys()):
+                fmt = extra_formats[key]
+
+            if isinstance(value, (datetime, pd.Timestamp)):
+                if fmt is not None:
+                    value = value.strftime(fmt)
+            fields[key] = value
+
+    return fields
+# ----------------------------------------------------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------------------------------------------------
+# method to convert a nested dictionary to a flattened dictionary
 def dict2flat(d, parent_key='', sep=':'):
     """Flatten a nested dictionary using a delimiter between keys."""
     items = {}
@@ -40,7 +59,10 @@ def dict2flat(d, parent_key='', sep=':'):
         else:
             items[new_key] = v
     return items
+# ----------------------------------------------------------------------------------------------------------------------
 
+# ----------------------------------------------------------------------------------------------------------------------
+# method to convert a flattened dictionary back to a nested dictionary
 def flat2dict(d, sep=':'):
     """Convert a flattened dictionary back to a nested dictionary."""
     result = {}
@@ -53,6 +75,7 @@ def flat2dict(d, sep=':'):
             current = current[part]
         current[keys[-1]] = value
     return result
+# ----------------------------------------------------------------------------------------------------------------------
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -176,7 +199,7 @@ def create_darray(data: np.ndarray,
 
 # ----------------------------------------------------------------------------------------------------------------------
 # method to create datasets
-def create_dset(var_data_values, var_geo_values, var_geo_x, var_geo_y,
+def create_dset_OLD(var_data_values, var_geo_values, var_geo_x, var_geo_y,
                 var_data_time=None,
                 var_data_name='variable', var_data_attrs=None, var_geo_name='terrain', var_geo_attrs=None,
                 coord_name_x='longitude', coord_name_y='latitude', coord_name_time='time',
@@ -255,7 +278,7 @@ def create_dset(var_data_values, var_geo_values, var_geo_x, var_geo_y,
 
 # ----------------------------------------------------------------------------------------------------------------------
 # method to write dataset
-def write_dset(file_name,
+def write_dset_OLD(file_name,
                dset_data, dset_mode='w', dset_engine='netcdf4', dset_compression=0, dset_format='NETCDF4',
                dim_key_time='time', no_data=-9999.0):
 

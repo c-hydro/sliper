@@ -11,7 +11,7 @@ Version:       '1.0.0'
 import logging
 import pandas as pd
 
-from typing import Dict, List, Union, Any, Tuple
+from typing import Dict, List, Union, Any
 
 from lib_info_args import logger_name
 
@@ -38,11 +38,42 @@ def convert_to_seconds(period_str):
 # ----------------------------------------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------------------------------------------------------------------
+# method to define window by type
+def search_window_by_type(
+        group_search_type: Dict[Any, List[str]],
+        group_search_period: Dict[Any, Union[List[Any], List[List[Any]]]]):
+
+    type_periods = {"left": [], "right": []}
+    type_window = {"left": [], "right": []}
+
+    for (type_id, type_info), (period_id, period_info) in zip(group_search_type.items(), group_search_period.items()):
+        types = list(map(str.lower, type_info))
+        periods_group = period_info
+
+        # Support positional mapping if both are lists
+        for idx, t in enumerate(types):
+            if t in type_periods:
+                for period_step in periods_group:
+                    if not isinstance(period_step, list):
+                        period_step = [period_step]
+                    if period_step not in type_periods[t]:
+                        type_periods[t].extend(period_step)
+
+    for type_name, type_values in type_periods.items():
+        type_unique = list(set(type_values))  # Remove duplicates
+        type_unique = sorted(type_unique, key=lambda x: int(x.rstrip('H')))
+        type_window[type_name] = type_unique
+
+    return type_window
+# ----------------------------------------------------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------------------------------------------------
 # method to define period by type
 def search_period_by_type(
     group_search_type: Dict[Any, List[str]],
     group_search_period: Dict[Any, Union[List[Any], List[List[Any]]]]
 ) -> Dict[str, Union[Any, None]]:
+
     type_periods = {"left": [], "right": []}
 
     for (type_id, type_info), (period_id, period_info) in zip(group_search_type.items(), group_search_period.items()):
@@ -120,61 +151,4 @@ def normalize_to_seconds(period_str):
     number = int(''.join(filter(str.isdigit, period_str)))
     unit = ''.join(filter(str.isalpha, period_str)).upper()
     return number * unit_multipliers.get(unit, 0)
-# ----------------------------------------------------------------------------------------------------------------------
-
-
-# ----------------------------------------------------------------------------------------------------------------------
-# dataset search period function
-def search_time_period_indicators_OLD(group):
-    all_periods = []
-    for area in group.values():
-        all_periods.extend(area["datasets"]["search_period"])
-
-    max_period = max(set(all_periods), key=normalize_to_seconds)
-    return max_period
-# ----------------------------------------------------------------------------------------------------------------------
-
-# ----------------------------------------------------------------------------------------------------------------------
-# method to compute time range
-def compute_time_period_indicators_OLD(
-    time: Union[str, pd.Timestamp],
-    time_period_length: Union[int, Tuple[int, int]] = 1,
-    time_period_type: Union[str, List[str], Tuple[str, str]] = 'both',
-    time_frequency: Union[str, Tuple[str, str]] = 'H'
-) -> pd.DatetimeIndex:
-    """
-    Compute a time range around a given time.
-
-    Parameters:
-    - time (str or pd.Timestamp): Central time point.
-    - time_period_length (int or tuple of int): Number of periods for each side of the range.
-    - time_period_type (str or list/tuple): One of 'left', 'right', 'both', or ['left', 'right'].
-    - time_frequency (str or tuple of str): Frequency string(s) for time intervals.
-
-    Returns:
-    - pd.DatetimeIndex: Computed range of datetime values.
-    """
-    # Validate input types
-    if time_period_type == 'left':
-        return pd.date_range(end=time, periods=time_period_length, freq=time_frequency)
-
-    elif time_period_type == 'right':
-        return pd.date_range(start=time, periods=time_period_length, freq=time_frequency)
-
-    elif time_period_type == 'both':
-        left = pd.date_range(end=time, periods=time_period_length, freq=time_frequency)
-        right = pd.date_range(start=time, periods=time_period_length, freq=time_frequency)
-        return left.union(right)
-
-    elif isinstance(time_period_type, (list, tuple)) and set(time_period_type) == {'left', 'right'}:
-        period_left, period_right = time_period_length
-        freq_left, freq_right = time_frequency
-        left = pd.date_range(end=time, periods=period_left, freq=freq_left)
-        right = pd.date_range(start=time, periods=period_right, freq=freq_right)
-        return left.union(right)
-
-    else:
-        # error handling for invalid time_period_type
-        log_stream.error(' ===> Invalid time_period_type: ' + str(time_period_type))
-        raise ValueError('Invalid time_period_type. Must be one of: "left", "right", "both", or ["left", "right"]')
 # ----------------------------------------------------------------------------------------------------------------------

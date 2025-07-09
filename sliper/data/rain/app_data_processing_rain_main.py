@@ -33,7 +33,7 @@ from lib_utils_time import set_time
 from lib_utils_logging import set_logging_file
 from lib_info_args import logger_name, time_format_algorithm
 
-# Logging
+# logging
 log_stream = logging.getLogger(logger_name)
 # ----------------------------------------------------------------------------------------------------------------------
 

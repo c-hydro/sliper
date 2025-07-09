@@ -33,12 +33,12 @@ from rasterio.crs import CRS
 
 from lib_info_args import logger_name
 
-# Logging
+# logging
 log_stream = logging.getLogger(logger_name)
 warnings.filterwarnings("ignore", category=FutureWarning, module="shapely")
 
-# Debug
-import matplotlib.pylab as plt
+# debugging
+# import matplotlib.pylab as plt
 # ----------------------------------------------------------------------------------------------------------------------
 
 
@@ -79,7 +79,6 @@ def find_points_with_buffer(points_values, points_x_values_2d, points_y_values_2
     return points_collections
 
 # ----------------------------------------------------------------------------------------------------------------------
-
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Method to compute grid from bounds

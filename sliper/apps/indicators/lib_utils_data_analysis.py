@@ -9,6 +9,7 @@ Version:       '1.0.0'
 # ----------------------------------------------------------------------------------------------------------------------
 # libraries
 import logging
+import pandas as pd
 
 from lib_info_args import logger_name
 
@@ -37,17 +38,26 @@ def compute_data_metrics(da_var, column_name=None, metrics=None):
             continue
 
         if metric == 'avg':
-            results['avg'] = float(da_var[column_name].mean())
+            mean_value = da_var[column_name].mean()
+            results['avg'] = float(mean_value.iloc[0]) if isinstance(mean_value, pd.Series) else float(mean_value)
+
         elif metric == 'max':
-            results['max'] = float(da_var[column_name].max())
+            max_value = da_var[column_name].max()
+            results['max'] = float(max_value.iloc[0]) if isinstance(max_value, pd.Series) else float(max_value)
+
         elif metric == 'min':
-            results['min'] = float(da_var[column_name].min())
+            min_value = da_var[column_name].min()
+            results['min'] = float(min_value.iloc[0]) if isinstance(min_value, pd.Series) else float(min_value)
+
         elif metric == 'first':
             time_first = da_var.index[0]
-            results['first'] = float(da_var.loc[time_first].values[0])
+            first_value = da_var.loc[time_first]
+            results['first'] = float(first_value[column_name]) if isinstance(first_value, pd.Series) else float(first_value)
+
         elif metric == 'last':
             time_last = da_var.index[-1]
-            results['last'] = float(da_var.loc[time_last].values[0])
+            last_value = da_var.loc[time_last]
+            results['last'] = float(last_value[column_name]) if isinstance(last_value, pd.Series) else float(last_value)
 
     return results
 

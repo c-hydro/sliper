@@ -10,7 +10,7 @@ __author__ =
         'Stefania Magri (stefania.magri@arpal.liguria.it)',
         'Monica Solimano (monica.solimano@arpal.liguria.it)'
 
-__library__ = 'ARPAL'
+__library__ = 'sliper'
 
 General command line:
 python app_indicators_rain_main.py -settings_file configuration.json -time "YYYY-MM-DD HH:MM"
@@ -32,7 +32,7 @@ Version(s):
 """
 
 # ----------------------------------------------------------------------------------------------------------------------
-# Complete library
+# libraries
 import logging
 import time
 import os
@@ -46,7 +46,7 @@ from argparse import ArgumentParser
 from lib_data_io_json import read_file_json
 from lib_utils_time import set_time
 from lib_utils_logging import set_logging_file
-from lib_info_args import logger_name
+from lib_info_args import logger_name, time_format_algorithm
 
 # Logging
 log_stream = logging.getLogger(logger_name)
@@ -54,11 +54,11 @@ log_stream = logging.getLogger(logger_name)
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Algorithm information
-alg_version = '2.0.5'
-alg_release = '2025-04-30'
-alg_name = 'SOIL SLIPS SCENARIOS MAIN'
-# Algorithm parameter(s)
-time_format = '%Y-%m-%d %H:%M'
+project_name = 'sliper'
+alg_name = 'SLIPER APP - RAIN INDICATORS PROCESSING'
+alg_type = 'Package'
+alg_version = '2.5.0'
+alg_release = '2025-06-20'
 # ----------------------------------------------------------------------------------------------------------------------
 
 
@@ -77,20 +77,18 @@ def main():
     set_logging_file(
         logger_name=logger_name,
         logger_file=os.path.join(data_settings['log']['folder_name'], data_settings['log']['file_name']))
-
-    # Set algorithm library dependencies
-    #set_deps(data_settings['algorithm']['dependencies'], env_extra=['PROJ_LIB', 'GDAL_DATA_SCRIPT', 'GDAL_DATA'])
     # ------------------------------------------------------------------------------------------------------------------
 
     # ------------------------------------------------------------------------------------------------------------------
     # Info algorithm
     log_stream.info(' ============================================================================ ')
-    log_stream.info(' ==> ' + alg_name + ' (Version: ' + alg_version + ' Release_Date: ' + alg_release + ')')
+    log_stream.info('[' + project_name + ' ' + alg_type + ' - ' + alg_name + ' (Version ' + alg_version +
+                    ' - Release ' + alg_release + ')]')
     log_stream.info(' ==> START ... ')
     log_stream.info(' ')
 
     # Time algorithm information
-    start_time = time.time()
+    alg_time_start = time.time()
     # ------------------------------------------------------------------------------------------------------------------
 
     # ------------------------------------------------------------------------------------------------------------------
@@ -100,8 +98,9 @@ def main():
         time_run_file=data_settings['time']['time_now'],
         time_run_file_start=data_settings['time']['time_start'],
         time_run_file_end=data_settings['time']['time_end'],
-        time_format=time_format,
-        time_period=data_settings['time']['time_period'],
+        time_format=time_format_algorithm,
+        time_period_observed=data_settings['time']['time_period']['observed'],
+        time_period_forecast=data_settings['time']['time_period']['forecast'],
         time_frequency=data_settings['time']['time_frequency'],
         time_rounding=data_settings['time']['time_rounding']
     )
@@ -133,43 +132,40 @@ def main():
     # ------------------------------------------------------------------------------------------------------------------
 
     # ------------------------------------------------------------------------------------------------------------------
-    # Iterate over time(s)
-    for time_step in time_range:
+    # data driver to define indicators
+    driver_data = DriverData(
+        time_run, time_range,
+        src_dict=data_settings['data']['dynamic']['source'],
+        anc_dict=data_settings['data']['dynamic']['ancillary'],
+        dst_dict=data_settings['data']['dynamic']['destination'],
+        tags_dict=data_settings['algorithm']['template'],
+        collections_data_geo_grid_ref=geo_data_collection_ref,
+        collections_data_geo_grid_other=geo_data_collections_aa,
+        collections_data_geo_pnt_other=geo_point_collections_aa,
+        collections_data_group=data_settings['algorithm']['ancillary']['group'],
+        flag_update_anc_grid=data_settings['algorithm']['flags']['update_dynamic_ancillary_grid'],
+        flag_update_anc_ts=data_settings['algorithm']['flags']['update_dynamic_ancillary_ts'],
+        flag_update_dst=data_settings['algorithm']['flags']['update_dynamic_destination'])
 
-        # data driver to define indicators
-        driver_data = DriverData(
-            time_step,
-            src_dict=data_settings['data']['dynamic']['source'],
-            anc_dict=data_settings['data']['dynamic']['ancillary'],
-            dst_dict=data_settings['data']['dynamic']['destination'],
-            tags_dict=data_settings['algorithm']['template'],
-            collections_data_geo_grid_ref=geo_data_collection_ref,
-            collections_data_geo_grid_other=geo_data_collections_aa,
-            collections_data_geo_pnt_other=geo_point_collections_aa,
-            collections_data_group=data_settings['algorithm']['ancillary']['group'],
-            flag_update_anc_grid=data_settings['algorithm']['flags']['update_dynamic_ancillary_grid'],
-            flag_update_anc_ts=data_settings['algorithm']['flags']['update_dynamic_ancillary_ts'],
-            flag_update_dst=data_settings['algorithm']['flags']['update_dynamic_destination'])
-
-        # method to organize data collections
-        data_collections = driver_data.organize_data(time_step)
-        # method to analyze data collections
-        analysis_collections = driver_data.analyze_data(time_step, data_collections)
-        # method to dump data collections
-        driver_data.dump_data(time_step, analysis_collections)
-        # --------------------------------------------------------------------------------------------------------------
+    # method to organize data collections
+    data_collections = driver_data.organize_data(time_run)
+    # method to analyze data collections
+    analysis_collections = driver_data.analyze_data(time_run, data_collections)
+    # method to dump data collections
+    driver_data.dump_data(time_run, analysis_collections)
+    # ------------------------------------------------------------------------------------------------------------------
 
     # ------------------------------------------------------------------------------------------------------------------
     # Info algorithm
-    time_elapsed = round(time.time() - start_time, 1)
+    alg_time_elapsed = round(time.time() - alg_time_start, 1)
 
     log_stream.info(' ')
-    log_stream.info(' ==> ' + alg_name + ' (Version: ' + alg_version + ' Release_Date: ' + alg_release + ')')
-    log_stream.info(' ==> TIME ELAPSED: ' + str(time_elapsed) + ' seconds')
+    log_stream.info('[' + project_name + ' ' + alg_type + ' - ' + alg_name + ' (Version ' + alg_version +
+                    ' - Release ' + alg_release + ')]')
+    log_stream.info(' ==> TIME ELAPSED: ' + str(alg_time_elapsed) + ' seconds')
     log_stream.info(' ==> ... END')
     log_stream.info(' ==> Bye, Bye')
     log_stream.info(' ============================================================================ ')
-
     # ------------------------------------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------------------------------------------------------------------

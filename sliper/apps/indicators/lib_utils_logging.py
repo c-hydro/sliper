@@ -3,14 +3,13 @@ Library Features:
 
 Name:          lib_utils_logging
 Author(s):     Fabio Delogu (fabio.delogu@cimafoundation.org)
-Date:          '20210408'
+Date:          '20250709'
 Version:       '1.0.0'
 """
 
-#######################################################################################
-# Library
+# ----------------------------------------------------------------------------------------------------------------------
+# libraries
 import logging
-import functools
 import os
 import logging.config
 import glob
@@ -19,45 +18,15 @@ from lib_info_args import logger_name_scenarios as logger_name_default
 from lib_info_args import logger_file_scenarios as logger_file_default
 from lib_info_args import logger_handle as logger_handle_default
 from lib_info_args import logger_format as logger_formatter_default
-from lib_utils_system import make_folder
-
-# Debug
-# import matplotlib.pylab as plt
-#######################################################################################
+# ----------------------------------------------------------------------------------------------------------------------
 
 
-# -------------------------------------------------------------------------------------
-# Class to decorate logging stream
-class LogDecorator(object):
-
-    def __init__(self, logger_name=None):
-        self.logger = logging.getLogger()
-        self.logger_name = logger_name
-
-    def __call__(self, fn):
-        @functools.wraps(fn)
-        def decorated(*args, **kwargs):
-            try:
-                if self.logger_name is not None:
-                    self.logger.name = self.logger_name
-                result = fn(*args, **kwargs)
-                return result
-            except Exception as ex:
-                self.logger.error(" ===> Exception {0}".format(ex))
-                raise RuntimeError('Errors in decorated function "' + str(ex) + '"')
-        return decorated
-# -------------------------------------------------------------------------------------
-
-
-# -------------------------------------------------------------------------------------
-# Method to set logging file
+# ----------------------------------------------------------------------------------------------------------------------
+# method to set logging file
 def set_logging_file(logger_file=logger_file_default, logger_name=logger_name_default,
                      logger_handle=logger_handle_default, logger_formatter=logger_formatter_default,
                      logger_history=False, logger_history_maxfiles=12,
                      logger_extra_tags=None):
-
-    # Set to flush progressbar output in logging stream handle
-    # progressbar.streams.wrap_stderr()
 
     if logger_extra_tags is not None:
         for extra_key, extra_value in logger_extra_tags.items():
@@ -67,7 +36,7 @@ def set_logging_file(logger_file=logger_file_default, logger_name=logger_name_de
             logger_file = logger_file.format(*extra_value)
 
     logger_folder_name, logger_file_name = os.path.split(logger_file)
-    make_folder(logger_folder_name)
+    os.makedirs(logger_folder_name, exist_ok=True)
 
     # Save old logger file (to check run in the past)
     if logger_history:
@@ -115,10 +84,10 @@ def set_logging_file(logger_file=logger_file_default, logger_name=logger_name_de
         # Add handle to logger
         logging.getLogger('').addHandler(logger_handle)
 
-# -------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 
 
-# -------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 # Method to store logging file (to save execution history)
 def store_logging_file(logger_file, logger_ext='.old.{}', logger_file_max=12):
 
@@ -145,4 +114,4 @@ def store_logging_file(logger_file, logger_ext='.old.{}', logger_file_max=12):
         if logger_file_loop:
             if logger_file != logger_file_loop:
                 os.rename(logger_file, logger_file_loop)
-# -------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------

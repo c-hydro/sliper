@@ -10,8 +10,8 @@
     },
     "flags": {
       "update_static": true,
-      "update_dynamic_ancillary_grid": false,
-      "update_dynamic_ancillary_ts": false,
+      "update_dynamic_ancillary_grid": true,
+      "update_dynamic_ancillary_ts": true,
       "update_dynamic_destination": true
     },
     "dependencies": {},
@@ -28,8 +28,8 @@
           "warning_index" : {"white": 0, "green": 1, "yellow": 2, "orange": 3, "red": 4},
           "catchment": ["Centa", "Imperiese", "Ponente", "Finalese"],
           "datasets" : {
-            "search_period": ["3H", "6H", "12H", "24H"],
-            "search_type": ["left"]
+            "search_period": [["3H", "6H", "12H", "24H"], ["3H", "6H", "12H", "24H"]],
+            "search_type": ["left", "right"]
           }
         },
         "alert_area_b": {
@@ -39,8 +39,8 @@
           "warning_index" : {"white": 0, "green": 1, "yellow": 2, "orange": 3, "red": 4},
           "catchment": ["Savonese", "CentroPonente", "PonenteGenovese", "LevanteGenovese"],
           "datasets" : {
-            "search_period": ["3H", "6H", "12H", "24H"],
-            "search_type": ["left"]
+            "search_period": [["3H", "6H", "12H", "24H"], ["3H", "6H", "12H", "24H"]],
+            "search_type": ["left", "right"]
           }
         },
         "alert_area_c": {
@@ -50,8 +50,8 @@
           "warning_index" : {"white": 0, "green": 1, "yellow": 2, "orange": 3, "red": 4},
           "catchment": ["Magra"],
           "datasets" : {
-            "search_period": ["3H", "6H", "12H", "24H"],
-            "search_type": ["left"]
+            "search_period": [["3H", "6H", "12H", "24H"], ["3H", "6H", "12H", "24H"]],
+            "search_type": ["left", "right"]
           }
         },
         "alert_area_d": {
@@ -61,8 +61,8 @@
           "warning_index" : {"white": 0, "green": 1, "yellow": 2, "orange": 3, "red": 4},
           "catchment": ["BormidaS", "BormidaM", "Erro", "OrbaStura"],
           "datasets" : {
-            "search_period": ["3H", "6H", "12H", "24H"],
-            "search_type": ["left"]
+            "search_period": [["3H", "6H", "12H", "24H"], ["3H", "6H", "12H", "24H"]],
+            "search_type": ["left", "right"]
           }
         },
         "alert_area_e": {
@@ -72,8 +72,8 @@
           "warning_index" : {"white": 0, "green": 1, "yellow": 2, "orange": 3, "red": 4},
           "catchment": ["Scrivia", "AvetoTrebbia"],
           "datasets" : {
-            "search_period": ["3H", "6H", "12H", "24H"],
-            "search_type": ["left"]
+            "search_period": [["3H", "6H", "12H", "24H"], ["3H", "6H", "12H", "24H"]],
+            "search_type": ["left", "right"]
           }
         }
       }
@@ -88,9 +88,13 @@
       "source_sub_path_time": "%Y/%m/%d/",
       "source_datetime": "%Y%m%d%H%M",
       "ancillary_sub_path_time": "%Y/%m/%d/",
-      "ancillary_datetime": "%Y%m%d%H%M",
+      "ancillary_datetime_run": "%Y%m%d%H%M",
+      "ancillary_datetime_start": "%Y%m%d%H%M",
+      "ancillary_datetime_end": "%Y%m%d%H%M",
       "destination_sub_path_time": "%Y/%m/%d/",
-      "destination_datetime": "%Y%m%d%H%M"
+      "destination_datetime_run": "%Y%m%d%H%M",
+      "destination_datetime_start": "%Y%m%d%H%M",
+      "destination_datetime_end": "%Y%m%d%H%M"
     }
   },
   "data": {
@@ -145,17 +149,17 @@
       "ancillary": {
         "grid": {
           "folder_name": "/home/fabio/Desktop/Workspace/sliper/ws/data_dynamic/ancillary/rain/{ancillary_sub_path_time}",
-          "file_name": "indicators_rain_{ancillary_datetime}_grid.workspace"
+          "file_name": "indicators_rain_{ancillary_datetime_run}_{ancillary_datetime_start}_{ancillary_datetime_end}_grid.workspace"
         },
         "ts": {
           "folder_name": "/home/fabio/Desktop/Workspace/sliper/ws/data_dynamic/ancillary/rain/{ancillary_sub_path_time}",
-          "file_name": "indicators_rain_{ancillary_datetime}_ts.workspace"
+          "file_name": "indicators_rain_{ancillary_datetime_run}_{ancillary_datetime_start}_{ancillary_datetime_end}_ts.workspace"
         }
       },
       "destination": {
         "__comment__": "type: time_series [csv]",
         "folder_name": "/home/fabio/Desktop/Workspace/sliper/ws/data_dynamic/destination/indicators_rain/{destination_sub_path_time}",
-        "file_name": "indicators_rain_{destination_datetime}_{alert_area_name}.csv",
+        "file_name": "indicators_rain_{destination_datetime_run}_{alert_area_name}.csv",
         "type": "time_series",
         "format": "csv"
       }
@@ -172,116 +176,10 @@
   "time": {
     "__comment__": "(1) frequency=D, period=n, rounding=D :: (2): frequency=H, period=1, rounding=H",
     "time_now": "2023-01-15 23:45",
-    "time_period": 4,
+    "time_period": {"observed": 24, "forecast": 48},
     "time_frequency": "H",
     "time_rounding": "H",
     "time_start": null,
     "time_end": null
-  },
-  "data_OLD": {
-    "static" : {
-      "source" : {
-        "soil_slips" : {
-          "database_data" : {
-            "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_static/db_soil_slips/",
-            "file_name": "Catasto_Frane_2014_2024.csv",
-            "type": "csv",
-            "delimiter": ";"
-          }
-        },
-        "geo": {
-          "reference": {
-            "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_static/reference/",
-            "file_name": "geo_liguria.tiff"
-          },
-          "region": {
-            "primary_data": {
-              "rain_data": {
-                "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_static/datasets/",
-                "file_name": "grid_rain.tiff"
-              },
-              "soil_moisture_data": {
-                "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_static/datasets/",
-                "file_name": "geo_liguria.tiff"
-              }
-            }
-          },
-          "alert_area": {
-            "primary_data": {
-              "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_static/alert_area/",
-              "file_name": "alert_area_epsg4326.shp"
-            }
-          }
-        },
-        "weather_stations": {
-          "registry_data": {
-            "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_static/db_weather_stations/",
-            "file_name": "dicembre_2019.csv"
-          }
-        }
-      },
-      "destination": {
-        "geo": {
-          "reference": {
-            "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_static/reference/",
-            "file_name": "geo_data_reference.workspace"
-          },
-          "region" : {
-            "primary_data": {
-              "rain_data": {
-                "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_static/datasets/",
-                "file_name": "geo_data_rain.workspace"
-              },
-              "soil_moisture_data": {
-                "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_static/datasets/",
-                "file_name": "geo_data_soil_moisture.workspace"
-              }
-            },
-            "index_data": {
-              "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_static/datasets/",
-              "file_name": "geo_data_index.workspace"
-            }
-          },
-          "alert_area": {
-            "primary_data": {
-              "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_static/alert_area/",
-              "file_name": "geo_alert_area.workspace"
-            },
-            "mask_data": {
-              "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_static/alert_area/",
-              "file_name": "geo_alert_area_{alert_area_name}.tiff"
-            },
-            "vector_data": {
-              "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_static/alert_area/",
-              "file_name": "geo_alert_area_{alert_area_name}.shp"
-            },
-            "index_grid_data": {
-              "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_static/alert_area/",
-              "file_name": "index_grid_alert_area_{alert_area_name}.workspace"
-            },
-            "index_circle_data": {
-              "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_static/alert_area/",
-              "file_name": "index_circle_alert_area_{alert_area_name}.workspace"
-            }
-          }
-        }
-      }
-    },
-    "dynamic": {
-      "source": {
-        "folder_name": "/home/fabio/Desktop/Workspace/sliper/ws/data_dynamic/destination/rain/{destination_sub_path_time}",
-        "file_name": "rain_{destination_datetime}.tiff"
-      },
-      "ancillary": {
-        "__comment__": "rain indicators in csv format",
-        "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_dynamic/outcome/indicators/{destination_indicators_sub_path_time}",
-        "file_name": "indicators_{destination_indicators_datetime}_{alert_area_name}.workspace"
-      },
-      "destination": {
-        "__comment__": "rain indicators in csv format",
-        "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_dynamic/outcome/indicators/{destination_indicators_sub_path_time}",
-        "file_name": "indicators_{destination_indicators_datetime}_{alert_area_name}.csv"
-      }
-    }
   }
 }

@@ -10,17 +10,14 @@ Version:       '1.0.0'
 # ----------------------------------------------------------------------------------------------------------------------
 # libraries
 import logging
-import numpy as np
 import re
 import pandas as pd
 
 from copy import deepcopy
-from datetime import date
+from datetime import date, timedelta
 from typing import Optional, Union, List, Tuple
 
 from lib_info_args import logger_name
-
-from lib_utils_system import get_dict_nested_value
 
 # logging
 log_stream = logging.getLogger(logger_name)
@@ -35,7 +32,7 @@ def set_time(
     time_format: str = '%Y-%m-%d %H:%M',
     time_run_file_start: Optional[str] = None,
     time_run_file_end: Optional[str] = None,
-    time_period: int = 1,
+    time_period_observed: int = 24, time_period_forecast: int = 48,
     time_frequency: str = 'H',
     time_rounding: str = 'H',
     time_reverse: bool = True
@@ -49,7 +46,8 @@ def set_time(
     - time_format (str): String format for parsing default/system time.
     - time_run_file_start (str, optional): Start of time range (if provided).
     - time_run_file_end (str, optional): End of time range (if provided).
-    - time_period (int): Number of periods in the time range.
+    - time_period_observed (int): Number of observed periods in the time range.
+    - time_period_forecast (int): Number of forecast periods in the time range.
     - time_frequency (str): Frequency string for the time range (e.g., 'H', 'D').
     - time_rounding (str): Rounding frequency (e.g., 'H' for hour).
     - time_reverse (bool): Whether to reverse the time range.
@@ -74,17 +72,25 @@ def set_time(
             time_tmp = time_now.strftime(time_format)
             log_stream.info(f' ------> Time {time_tmp} set by system')
 
+        # ensure time format is valid
         time_run = pd.Timestamp(time_tmp).floor(time_rounding.lower())
 
-        if time_period > 0:
-            time_range = pd.date_range(end=time_run, periods=time_period, freq=time_frequency.lower())
+        # generate observed and forecast time ranges
+        time_part_obs = deepcopy(time_run)
+        time_range_observed = get_time_range(time_part_obs, time_period_observed, time_frequency, 'Observed')
+        time_part_forecast = time_run + parse_time_window(time_frequency)
+        time_range_forecast = get_time_range(time_part_forecast, time_period_forecast, time_frequency, 'Forecast')
+
+        # combine both ranges into a common unified time range
+        if time_range_forecast is not None:
+            time_range = time_range_observed.union(time_range_forecast)
         else:
-            log_stream.warning(' ===> TimePeriod must be greater than 0. TimePeriod is set automatically to 1')
-            time_range = pd.DatetimeIndex([time_run], freq=time_frequency.lower())
+            time_range = time_range_observed
 
         log_stream.info(' -----> Time info defined by "time_run" argument ... DONE')
 
     elif time_run_file_start is not None and time_run_file_end is not None:
+
         log_stream.info(' -----> Time info defined by "time_start" and "time_end" arguments ... ')
 
         time_start = pd.Timestamp(time_run_file_start).floor(time_rounding)
@@ -121,203 +127,157 @@ def set_time(
     log_stream.info(' ----> Set time period ... DONE')
 
     return [time_run, time_range]
-# -------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 
-# -------------------------------------------------------------------------------------
-# Method to verify time window
-def verify_time_window(time_reference, time_period, time_step=1):
+# ----------------------------------------------------------------------------------------------------------------------
+# method to get time range
+def get_time_range(time_run: pd.Timestamp, time_period: int = 24,
+                   time_frequency: str = 'h', label: str = 'Observed') -> (pd.DatetimeIndex, None):
 
-    if not isinstance(time_period, pd.DatetimeIndex):
-        time_period = pd.DatetimeIndex(time_period)
+    if time_period is None or time_period <= 0:
+        if label == 'Observed':
+            log_stream.warning(f' ===> {label}: TimePeriod must be defined and greater than 0. Automatically set to 1.')
+            time_period = 1
+        elif label == 'Forecast':
+            log_stream.warning(f' ===> {label}: TimePeriod must be defined and greater than 0. Automatically set to 1.')
+            return None
 
-    if time_reference in time_period:
-        idx_start = time_period.get_loc(time_reference)
+    try:
+        if label == 'Observed':
+            return pd.date_range(end=time_run, periods=time_period, freq=time_frequency.lower())
+        elif label == 'Forecast':
+            return pd.date_range(start=time_run, periods=time_period, freq=time_frequency.lower())
+        else:
+            log_stream.error(f' ===> {label}: Invalid label for time range generation.')
+            raise ValueError(f'Invalid label: {label}. Use "Observed" or "Forecast".')
+    except Exception as e:
+        log_stream.error(f' ===> {label}: Failed to generate time range: {e}')
+        return pd.DatetimeIndex([time_run])
+# ----------------------------------------------------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------------------------------------------------
+# method to divide time range into observed and forecast periods
+def divide_time_range(index: pd.DatetimeIndex, ref_time: pd.Timestamp,
+                      observed_hours: str = '24h', forecast_hours: str = '48h',
+                      ref_frequency: str = 'h',
+                      observed_label: str = "observed", forecast_label: str = "forecast") -> pd.DataFrame:
+    """
+    Divide a DatetimeIndex into variable-length blocks before and after a reference time.
+    Automatically labels periods using customizable names (e.g., 'observed', 'forecast').
+
+    Parameters:
+        index: DatetimeIndex to segment
+        ref_time: Reference timestamp dividing observed and forecast
+        ref_frequency: Frequency of the reference time (default: 'h' for hours)
+        observed_hours: Block size (in hours) before ref_time
+        forecast_hours: Block size (in hours) after ref_time
+        observed_label: Base name for periods before ref_time (default: 'observed')
+        forecast_label: Base name for periods after ref_time (default: 'forecast')
+
+    Returns:
+        DataFrame with columns: ['period_name', 'time_start', 'time_end']
+    """
+
+    index = index.sort_values()
+    ref_frequency = ref_frequency.lower()
+
+    periods = []
+    i_obs, i_fc = 1, 1
+    start_time = index[0]
+    end_time = index[-1]
+
+    obs_period, obs_frequency = split_time_window(observed_hours)
+    fc_period, fc_frequency = split_time_window(forecast_hours)
+
+    ref_freq = parse_time_window(ref_frequency)
+    obs_freq = parse_time_window(observed_hours)
+    fc_freq = parse_time_window(forecast_hours)
+
+    # Build observed periods (before ref_time)
+    current_end = ref_time
+    while current_end >= start_time:
+        current_start = current_end - obs_freq + ref_freq
+        clipped_start = max(current_start, start_time)
+        clipped_end = min(current_end, end_time)
+        if clipped_start <= clipped_end:
+            periods.append({
+                "period_type": observed_label,
+                "period_tag": f"{observed_label}_{i_obs}_period",
+                "period_id": i_obs,
+                "time_start": clipped_start,
+                "time_end": clipped_end,
+                "time_key": clipped_start.strftime('%Y-%m-%d'),
+                "time_range": pd.date_range(start=clipped_start, end=clipped_end, freq=ref_frequency)
+            })
+        current_end = current_start - ref_freq
+        i_obs += 1
+
+    # Build forecast periods (at or after ref_time)
+    current_start = ref_time + ref_freq
+    while current_start <= end_time:
+        current_end = current_start + fc_freq - ref_freq
+        clipped_start = max(current_start, start_time)
+        clipped_end = min(current_end, end_time)
+        if clipped_start <= clipped_end:
+            periods.append({
+                "period_type": forecast_label,
+                "period_tag": f"{forecast_label}_{i_fc}_period",
+                "period_id": i_fc,
+                "time_start": clipped_start,
+                "time_end": clipped_end,
+                "time_key": clipped_start.strftime('%Y-%m-%d'),
+                "time_range": pd.date_range(start=clipped_start, end=clipped_end, freq=ref_frequency)
+            })
+        current_start = current_end + ref_freq
+        i_fc += 1
+
+    # define time dataframe
+    df_time = pd.DataFrame(periods).sort_values("time_key").reset_index(drop=True)
+
+    # Sort by time
+    return df_time
+# ----------------------------------------------------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------------------------------------------------
+# method to split time window
+def split_time_window(s):
+    match = re.match(r'^(\d+)(.*)', s)
+    if match:
+        digits, rest = match.groups()
+        return digits, rest
+    return 1, s  # No leading digits
+# ----------------------------------------------------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------------------------------------------------
+# method to parse time window
+def parse_time_window(code: str) -> timedelta:
+    """
+    Parse a string starting with 'h' or 'd' followed by an optional integer.
+    Returns a timedelta object.
+    Examples:
+        'h'   -> timedelta(hours=1)
+        'h2'  -> timedelta(hours=2)
+        'd'   -> timedelta(days=1)
+        'd3'  -> timedelta(days=3)
+    """
+
+    code = code.strip().lower()  # Normalize input to lowercase and strip whitespace
+
+    if not code:
+        raise ValueError("Code cannot be empty.")
+
+    amount_str, unit = split_time_window(code)
+
+    if isinstance(amount_str, str):
+        if not amount_str.isdigit():
+            raise ValueError("Expected a digit after 'h' or 'd'.")
+
+    amount = int(amount_str)
+
+    if unit == 'h':
+        return timedelta(hours=amount)
+    elif unit == 'd':
+        return timedelta(days=amount)
     else:
-        idx_start = None
-
-    idx_end = None
-    if idx_start is not None:
-        idx_end = idx_start + time_step - 1
-
-    flag_temporal_window = False
-    if (idx_start is not None) and (idx_end is not None):
-        if time_period.shape[0] > idx_end:
-            flag_temporal_window = True
-
-    if not flag_temporal_window:
-        log_stream.warning(' ===> Temporal window do not include all the needed step for computing variable')
-        log_stream.warning(' ===> Due to this issue of the time period, the variable will be not plotted.')
-
-    return flag_temporal_window
-
-# -------------------------------------------------------------------------------------
-
-
-# -------------------------------------------------------------------------------------
-# Method to split time window
-def split_time_window(time_window):
-
-    if not isinstance(time_window, list):
-        time_window = [time_window]
-
-    time_period, time_frequency = [], []
-    for tmp_window in time_window:
-        tmp_period = re.findall(r'\d+', tmp_window)
-        if tmp_period.__len__() > 0:
-            tmp_period = int(tmp_period[0])
-        else:
-            tmp_period = 1
-        tmp_frequency = re.findall("[a-zA-Z]+", tmp_window)[0]
-
-        time_period.append(tmp_period)
-        time_frequency.append(tmp_frequency)
-
-    if len(time_period) == 1:
-        time_period = time_period[0]
-        time_frequency = time_frequency[0]
-
-    return time_period, time_frequency
-# -------------------------------------------------------------------------------------
-
-
-# -------------------------------------------------------------------------------------
-# Method to find time maximum delta
-def find_time_maximum_delta(time_delta_list):
-    delta_string_max = None
-    delta_seconds_max = 0
-    for delta_string_step in time_delta_list:
-        delta_seconds_step = pd.to_timedelta(delta_string_step).total_seconds()
-        if delta_seconds_step > delta_seconds_max:
-            delta_seconds_max = delta_seconds_step
-            delta_string_max = delta_string_step
-
-    return delta_string_max
-# -------------------------------------------------------------------------------------
-
-
-# -------------------------------------------------------------------------------------
-# Method to search time features
-def search_time_features(data_structure, data_key='rain_datasets', data_search_type='max'):
-
-    search_period_selected, search_frequency_selected, search_type_selected = None, None, None
-    if (data_key is not None) and (isinstance(data_key, str)):
-
-        type_check_steps, type_length_steps = [], []
-        period_check_steps = []
-        for group_name, group_fields in data_structure.items():
-            type_tmp = get_dict_nested_value(group_fields, [data_key, "search_type"])
-            period_tmp = get_dict_nested_value(group_fields, [data_key, "search_period"])
-            type_length_steps.append(len(type_tmp))
-            type_check_steps.append(type_tmp)
-            period_check_steps.append(period_tmp)
-        type_length_arr = np.asarray(type_length_steps)
-        max_length_idx = np.argmax(type_length_arr)
-        type_length_max = type_length_arr[max_length_idx]
-
-        # case 1: ['12H', '3H', '24H', '6H'], ['left']
-        if type_length_max == 1:
-
-            search_period_list, search_type_list = [], []
-            for group_name, group_fields in data_structure.items():
-                period_tmp = get_dict_nested_value(group_fields, [data_key, "search_period"])
-                type_tmp = get_dict_nested_value(group_fields, [data_key, "search_type"])
-                search_period_list.extend(period_tmp)
-                search_type_list.extend(type_tmp)
-            search_period_list = list(set(search_period_list))
-            search_type_list = list(set(search_type_list))
-
-        # case 2: ['12H', '3H'], ['left', 'right'] --> check if all elements are equal defined by the same objects
-        elif type_length_max == 2:
-
-            if not all(type_length_arr) == 2:
-                log_stream.warning(' ===> Obj "search_type_list" is not defined by all elements equal to 2.')
-
-            type_length_idx = np.argwhere(np.asarray(type_length_steps) == 2)[:, 0]
-            type_select_steps = [type_check_steps[tmp_idx] for tmp_idx in type_length_idx]
-            period_select_steps = [period_check_steps[tmp_idx] for tmp_idx in type_length_idx]
-
-            period_left_step, period_right_step = [], []
-            type_left_step, type_right_step = [], []
-            for type_select_tmp, period_select_tmp in zip(type_select_steps, period_select_steps):
-
-                if type_select_tmp[0] == 'left':
-                    type_left_step.append(type_select_tmp[0])
-                    period_left_step.append(period_select_tmp[0])
-                elif type_select_tmp[0] == 'right':
-                    log_stream.warning(
-                        ' ===> Obj "type" right position is in a wrong position. '
-                        'Check the settings file, By default the left position will be swapped for type and period')
-                    type_left_step.append(type_select_tmp[1])
-                    period_left_step.append(period_select_tmp[1])
-                if type_select_tmp[1] == 'right':
-                    type_right_step.append(type_select_tmp[1])
-                    period_right_step.append(period_select_tmp[1])
-                elif type_select_tmp[1] == 'left':
-                    log_stream.warning(
-                        ' ===> Obj "type" left position is in a wrong position. '
-                        'Check the settings file, By default the right position will be swapped for type and period')
-                    type_right_step.append(type_select_tmp[0])
-                    period_right_step.append(period_select_tmp[0])
-
-            period_left_max, period_right_max = None, None
-            for period_left_tmp, period_right_tmp in zip(period_left_step, period_right_step):
-                if period_left_max is None:
-                    period_left_max = period_left_tmp
-                else:
-                    if pd.to_timedelta(period_left_tmp).total_seconds() > pd.to_timedelta(period_left_max).total_seconds():
-                        period_left_max = period_left_tmp
-                if period_right_max is None:
-                    period_right_max = period_right_tmp
-                else:
-                    if pd.to_timedelta(period_right_tmp).total_seconds() > pd.to_timedelta(period_right_max).total_seconds():
-                        period_right_max = period_right_tmp
-
-            period_select_defined = [period_left_max, period_right_max]
-            for period_id_steps, period_tmp_steps in enumerate(period_check_steps):
-                if period_tmp_steps != period_select_defined:
-                    log_stream.warning(' ===> Obj "period" should be have the same elements. Check the settings file')
-                    log_stream.warning(' Select element is "' + str(period_select_defined) +
-                                       '" and not "' + str(period_tmp_steps) +
-                                       '". Update the settings file using the same period. '
-                                       'The selected period will be used as default')
-
-                    period_check_steps[period_id_steps] = period_select_defined
-
-            type_select_defined = [type_left_step[0], type_right_step[0]]
-            for type_id_steps, type_tmp_steps in enumerate(type_check_steps):
-                if type_tmp_steps != type_select_defined:
-                    log_stream.warning(' ===> Obj "type" should be have the same elements. Check the settings file')
-                    log_stream.warning(' Select element is "' + str(type_select_defined) +
-                                       '" and not "' + str(type_tmp_steps) +
-                                       '". Update the settings file using the same type. '
-                                       'The selected type will be used as default')
-
-                    type_check_steps[type_id_steps] = type_select_defined
-
-            search_type_list = type_check_steps[0]
-            search_period_list = period_check_steps[0]
-        else:
-            log_stream.error(' ===> Obj "search_type_list" is not defined by 1 or 2 elements.')
-            raise NotImplementedError('Case not implemented yet')
-
-        if data_search_type == 'max':
-            if len(search_type_list) == 1:  # 24, H, left
-                search_delta_selected = find_time_maximum_delta(search_period_list)
-                search_period_selected, search_frequency_selected = split_time_window(search_delta_selected)
-                search_type_selected = search_type_list[0]
-            elif len(search_type_list) == 2:
-                search_delta_selected = deepcopy(search_period_list)
-                search_period_selected, search_frequency_selected = split_time_window(search_delta_selected)
-                search_type_selected = deepcopy(search_type_list)
-            else:
-                log_stream.error(' ===> Obj "search_type_list" is not defined by 1 or 2 elements.')
-                raise NotImplementedError('Case not implemented yet')
-
-        else:
-            log_stream.error(' ===> Search type "' + data_search_type + '" is not supported')
-            raise NotImplementedError('Case not implemented yet')
-    else:
-        log_stream.warning(' ===> Search time features are defined by NoneType ')
-
-    return search_period_selected, search_frequency_selected, search_type_selected
-# -------------------------------------------------------------------------------------
+        raise ValueError("Unsupported time unit. Use 'h' for hours or 'd' for days.")
+# ----------------------------------------------------------------------------------------------------------------------
