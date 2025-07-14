@@ -143,10 +143,13 @@ class DriverData:
 
     # ------------------------------------------------------------------------------------------------------------------
     # method to dump data
-    def dump_data(self, time_run: pd.Timestamp, analysis_collections: dict, var_name='rain'):
+    def dump_data(self, analysis_collections: dict, var_name='rain'):
 
         # info method start
-        log_stream.info(' ----> Dump dynamic data [' + str(time_run) + '] ... ')
+        log_stream.info(' ----> Dump dynamic data [' + str(self.time_run) + '] ... ')
+
+        # get time info
+        time_run = self.time_run
 
         # get group information
         group_info = self.data_group
@@ -244,16 +247,20 @@ class DriverData:
                                 '" SKIPPED. Analysis file created previously')
 
         # info method end
-        log_stream.info(' ----> Dump dynamic data [' + str(time_run) + '] ... DONE')
+        log_stream.info(' ----> Dump dynamic data [' + str(self.time_run) + '] ... DONE')
 
     # ------------------------------------------------------------------------------------------------------------------
 
     # ------------------------------------------------------------------------------------------------------------------
     # method to analyze data
-    def analyze_data(self, time_run: pd.Timestamp, data_collections: dict, var_name='rain'):
+    def analyze_data(self, data_collections: dict, var_name='sm'):
 
         # info method start
-        log_stream.info(' ----> Analyze dynamic data [' + str(time_run) + '] ... ')
+        log_stream.info(' ----> Analyze dynamic data [' + str(self.time_run) + '] ... ')
+
+        # get time info
+        time_run = self.time_run
+
 
         # get group information
         group_info = self.data_group
@@ -401,17 +408,20 @@ class DriverData:
             log_stream.info(' -----> Type "' + period_tag + '" ... DONE')
 
         # info method end
-        log_stream.info(' ----> Analyze dynamic data [' + str(time_run) + '] ... DONE')
+        log_stream.info(' ----> Analyze dynamic data [' + str(self.time_run) + '] ... DONE')
 
         return analysis_collections
     # ------------------------------------------------------------------------------------------------------------------
 
     # ------------------------------------------------------------------------------------------------------------------
     # method to organize data
-    def organize_data(self, time_run: pd.Timestamp, time_all=False, var_name='sm'):
+    def organize_data(self, time_all=False, var_name='sm'):
 
         # info method start
-        log_stream.info(' ----> Organize dynamic data [' + str(time_run) + '] ... ')
+        log_stream.info(' ----> Organize dynamic data [' + str(self.time_run) + '] ... ')
+
+        # get time info
+        time_run = self.time_run
 
         # get group information
         group_info = self.data_group
@@ -623,7 +633,7 @@ class DriverData:
             log_stream.info(' -----> Type "' + period_tag + '" ... DONE')
 
         # info method end
-        log_stream.info(' ----> Organize dynamic data [' + str(time_run) + '] ... DONE')
+        log_stream.info(' ----> Organize dynamic data [' + str(self.time_run) + '] ... DONE')
 
         return datasets_collections
 
