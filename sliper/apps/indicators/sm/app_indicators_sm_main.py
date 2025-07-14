@@ -162,7 +162,7 @@ def main():
     alg_time_elapsed = round(time.time() - alg_time_start, 1)
 
     log_stream.info(' ')
-    log_stream.info('[' + project_name + ' ' + alg_type + ' - ' + alg_name + ' (Version ' + alg_version +
+     log_stream.info('[' + project_name + ' ' + alg_type + ' - ' + alg_name + ' (Version ' + alg_version +
                     ' - Release ' + alg_release + ')]')
     log_stream.info(' ==> TIME ELAPSED: ' + str(alg_time_elapsed) + ' seconds')
     log_stream.info(' ==> ... END')

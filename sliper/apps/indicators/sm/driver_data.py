@@ -316,7 +316,7 @@ class DriverData:
                     log_stream.info(' ------> Reference area "' + group_key + '" ... ')
 
                     # get geographical datasets
-                    geo_da = data_geo_grid_other[group_key]['mask']
+                    geo_da = data_geo_grid_other[group_key]['geo_dst']
                     geo_idx_array = data_geo_grid_other[group_key]['index_array']
                     geo_idx_valid_output = data_geo_grid_other[group_key]['valid_output_index']
                     geo_pnt = data_geo_pnt_other[group_key]

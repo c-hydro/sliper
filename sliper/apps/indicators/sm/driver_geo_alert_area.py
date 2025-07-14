@@ -51,7 +51,6 @@ class DriverGeoAlertArea:
         self.type_tag, self.format_tag = 'type', 'format'
         self.xll_corner_tag, self.yll_corner_tag = 'xll_corner', 'yll_corner'
         self.cell_size_tag, self.rows_tag, self.cols_tag   = 'cell_size', 'rows', 'cols'
-        self.geo_src_tag, self.geo_anc_tag, self.geo_dst_tag = 'geo_src', 'geo_anc', 'geo_dst'
 
         self.obj_fields_file = [self.file_name_tag, self.folder_name_tag]
         self.obj_fields_grid = [self.xll_corner_tag, self.yll_corner_tag,
@@ -291,8 +290,8 @@ class DriverGeoAlertArea:
 
                 # create geo grid collections
                 geo_data_collections = {
-                    'ref': geo_da_src,
-                    'mask': geo_mask_alert_area,
+                    'geo_src': geo_da_src,
+                    'geo_dst': geo_mask_alert_area,
                     'valid_input_index': valid_input_index,
                     'valid_output_index': valid_output_index,
                     'index_array': index_array,
