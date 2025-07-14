@@ -135,7 +135,7 @@
           "file_geo_mask": "watermark_dataset",
           "file_type": "netcdf",
           "file_domain": {"flag": true, "value": null},
-          "file_layer": {"flag": false, "value": ["LST", "SM", "SnowMask"]},
+          "file_layer": {"flag": false, "value": ["SM"]},
           "file_coords": {"x":  "Longitude", "y":  "Latitude", "time":  "time"},
           "file_frequency": "H"
         }
@@ -177,7 +177,7 @@
     "time_run": null,
     "time_start": null,
     "time_end": null,
-    "time_period": 0,
+    "time_period": 72,
     "time_frequency": "H",
     "time_rounding": "H",
     "time_reverse": true

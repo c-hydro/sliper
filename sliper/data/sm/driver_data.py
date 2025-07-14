@@ -583,35 +583,6 @@ class DriverData:
     # -------------------------------------------------------------------------------------
 
     # -------------------------------------------------------------------------------------
-    # Method to clean dynamic tmp
-    def clean_dynamic_tmp(self):
-
-        flag_cleaning_tmp = self.flag_cleaning_dynamic_tmp
-        file_path_anc = self.file_path_obj_anc
-
-        if flag_cleaning_tmp:
-
-            for file_path_fields in file_path_anc.values():
-                for file_path_obj in file_path_fields.values():
-                    if (isinstance(file_path_obj, list)) and file_path_obj.__len__() == 1:
-                        file_path_obj = file_path_obj[0]
-                    else:
-                        log_stream.error(' ===> File path obj is defined by unsupported format')
-                        raise IOError('Case not implemented yet')
-                    for file_path_step in list(file_path_obj.values()):
-                        folder_name_step, file_name_step = os.path.split(file_path_step)
-                        if os.path.exists(file_path_step):
-                            os.remove(file_path_step)
-
-                        folder_name_list = find_folder(folder_name_step)
-                        for folder_name_step in folder_name_list:
-                            if os.path.exists(folder_name_step):
-                                if not any(os.scandir(folder_name_step)):
-                                    os.rmdir(folder_name_step)
-
-    # -------------------------------------------------------------------------------------
-
-    # -------------------------------------------------------------------------------------
     # Method to dump dynamic data
     def dump_data(self):
 

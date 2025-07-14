@@ -123,9 +123,10 @@ def main():
             flag_cleaning_dynamic_ancillary=data_settings['algorithm']['flags']['cleaning_dynamic_ancillary'],
             flag_cleaning_dynamic_tmp=data_settings['algorithm']['flags']['cleaning_dynamic_tmp'])
 
+        # organize data collections
         driver_data.organize_data()
+        # dump data collections
         driver_data.dump_data()
-        driver_data.clean_dynamic_tmp()
         # -------------------------------------------------------------------------------------
 
     # -------------------------------------------------------------------------------------
