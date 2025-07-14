@@ -41,7 +41,6 @@ class DriverGeoReference:
         self.file_name_tag, self.folder_name_tag = 'file_name', 'folder_name'
         self.xll_corner_tag, self.yll_corner_tag = 'xll_corner', 'yll_corner'
         self.cell_size_tag, self.rows_tag, self.cols_tag   = 'cell_size', 'rows', 'cols'
-        self.geo_src_tag, self.geo_dst_tag = 'geo_src', 'geo_dst'
 
         self.obj_fields_file = [self.file_name_tag, self.folder_name_tag]
         self.obj_fields_grid = [self.xll_corner_tag, self.yll_corner_tag,
@@ -122,10 +121,10 @@ class DriverGeoReference:
 
         # create geo grid collections
         geo_data_collections = {
-            self.geo_src_tag: geo_da_src,
-            self.geo_dst_tag: geo_da_dst,
-            'valid_input_index': valid_input_index,
-            'valid_output_index': valid_output_index,
+            'geo_src': geo_da_src,
+            'geo_dst': geo_da_dst,
+            'valid_src_index': valid_input_index,
+            'valid_dst_index': valid_output_index,
             'index_array': index_array,
             'weight_array': weight_array
         }

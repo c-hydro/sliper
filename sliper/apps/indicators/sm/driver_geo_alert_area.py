@@ -202,8 +202,8 @@ class DriverGeoAlertArea:
             # info domain start
             log_stream.info(' ------> Analyze "' + group_name + '" ... ')
 
+            # extract group information
             group_info = group_settings['info']
-
             # get geo information
             geo_polygons_group = geo_polygons_src[group_info['alert_area']]
 
@@ -359,7 +359,7 @@ class DriverGeoAlertArea:
 
     # ------------------------------------------------------------------------------------------------------------------
     # Method to organize geographical data
-    def organize_data(self, geo_collections_reference: dict):
+    def organize_data(self):
 
         # Starting info
         log_stream.info(' ----> Organize alert area geographical data ... ')
@@ -407,8 +407,7 @@ class DriverGeoAlertArea:
             # read geo data from file
             geo_collections = read_obj(path_name_dst)
             geo_info = geo_collections['info']
-            geo_data = geo_collections['geo_data']
-            geo_point = geo_collections['geo_point']
+            geo_data, geo_point = geo_collections['geo_data'], geo_collections['geo_point']
 
         # Ending info
         log_stream.info(' ----> Organize alert area geographical data ... DONE')

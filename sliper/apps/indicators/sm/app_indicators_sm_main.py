@@ -130,7 +130,7 @@ def main():
         flag_update=data_settings['algorithm']['flags']['update_static'])
     # organize geo collections
     (geo_info_aa,
-     geo_data_collections_aa, geo_point_collections_aa) = driver_geo_alert_area.organize_data(geo_data_collection_ref)
+     geo_data_collections_aa, geo_point_collections_aa) = driver_geo_alert_area.organize_data()
     # ------------------------------------------------------------------------------------------------------------------
 
     # ------------------------------------------------------------------------------------------------------------------
