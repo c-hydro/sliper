@@ -1,7 +1,7 @@
 {
   "algorithm": {
     "general": {
-      "title": "Running tool for soil slips scenarios",
+      "title": "Running tool for preprocessing rain datasets",
       "web-site": "",
       "source": "Python library developed by ARPAL and CIMA Research Foundation",
       "history": "1.0.0 [20250616]",
