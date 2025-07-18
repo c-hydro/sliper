@@ -49,12 +49,7 @@
       }
     },
     "template": {
-      "domain_name": "string_domain",
-      "month_name": "string_month",
       "alert_area_name": "string_alert_area",
-      "season_name": "string_season",
-      "var_name": "string_variable",
-      "catchment_name": "string_catchment",
       "source_sub_path_time": "%Y/%m/%d/",
       "source_datetime": "%Y%m%d%H%M",
       "ancillary_sub_path_time": "%Y/%m/%d/",
