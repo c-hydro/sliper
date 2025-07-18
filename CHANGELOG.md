@@ -4,13 +4,14 @@ All notable changes to this project are documented in this file.
 
 ---
 
-## [3.0.0] – 2025-06-20
+## [3.0.0] – 2025-07-18
 ### Added
 - Unified SLIPER runner integrating previous tools under a single modular framework
-- Dynamic YAML configuration handling
 - Workspace-based I/O structure (data_static, data_dynamic, tmp, log)
 - Automated conda-based environment provisioning
 - Structured logging and error tracking mechanisms
+- Add applications to process rain, soil moisture and soil slips datasets
+- Add applications to define rain and soil moisture indicators
 
 ### Changed
 - Refactored runner logic for maintainability and consistency
