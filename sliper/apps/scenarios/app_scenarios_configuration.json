@@ -1,0 +1,184 @@
+{
+  "algorithm": {
+    "general": {
+      "title": "Processing tool for scenarios",
+      "web-site": "",
+      "source": "Python library developed by ARPAL and CIMA Research Foundation",
+      "history": "2.5.0 [20250721]",
+      "project-info": "sliper - Soil Landslide Information and Prediction & Early Response",
+      "algorithm": "Algorithm developed by ARPAL and CIMA Research Foundation"
+    },
+    "flags": {
+      "update_static": true,
+      "update_dynamic_ancillary_datasets": true,
+      "update_dynamic_ancillary_analysis": true,
+      "update_dynamic_destination": true
+    },
+    "info": {},
+    "template": {
+      "domain_name": "string_domain",
+      "alert_area_name": "string_alert_area",
+      "source_sub_path_time_rain": "%Y/%m/%d/",
+      "source_datetime_rain": "%Y%m%d%H%M",
+      "source_sub_path_time_sm": "%Y/%m/%d/",
+      "source_datetime_sm": "%Y%m%d%H%M",
+      "source_sub_path_time_soil_slips": "%Y/%m/%d/",
+      "source_datetime_soil_slips": "%Y%m%d%H%M",
+      "ancillary_sub_path_time": "%Y/%m/%d/",
+      "ancillary_datetime_run": "%Y%m%d%H%M",
+      "ancillary_datetime_start": "%Y%m%d%H%M",
+      "ancillary_datetime_end": "%Y%m%d%H%M",
+      "destination_sub_path_time": "%Y/%m/%d/",
+      "destination_datetime_run": "%Y%m%d%H%M",
+      "destination_datetime_start": "%Y%m%d%H%M",
+      "destination_datetime_end": "%Y%m%d%H%M"
+    }
+  },
+  "data": {
+    "static" : {
+      "source": {
+        "folder_name": "/home/fabio/Desktop/sliper/ws/data_static/alert_area/",
+        "file_name": "alert_area_info.csv",
+        "type": "vector",
+        "format": "csv"
+      },
+      "destination": {
+        "folder_name": "/home/fabio/Desktop/Workspace/sliper/ws/data_static/workspace/",
+        "file_name": "geo_info_scenarios.workspace",
+        "type": "vector",
+        "format": "workspace"
+      }
+    },
+    "dynamic": {
+      "source": {
+        "rain": {
+          "__comment__": "type: time_series [csv]",
+          "folder_name": "/home/fabio/Desktop/Workspace/sliper/ws/data_dynamic/destination/indicators_rain/{source_sub_path_time_rain}",
+          "file_name": "indicators_rain_{source_datetime_rain}_{alert_area_name}.csv",
+          "type": "vector",
+          "format": "csv",
+          "priority": "reference",
+          "delimiter": ";",
+          "fields": {
+            "time": "time",
+            "rain_peak_3H:max": "rain_peak_3H:max",
+            "rain_peak_3H:avg": null,
+            "rain_average_3H:avg": null,
+            "rain_average_3H:max": null,
+            "rain_average_3H:min": null,
+            "rain_accumulated_3H:max": null,
+            "rain_accumulated_3H:min": null,
+            "rain_peak_6H:max": null,
+            "rain_peak_6H:avg": null,
+            "rain_average_6H:avg": null,
+            "rain_average_6H:max": null,
+            "rain_average_6H:min": null,
+            "rain_accumulated_6H:max": null,
+            "rain_accumulated_6H:min": null,
+            "rain_peak_12H:max": null,
+            "rain_peak_12H:avg": null,
+            "rain_average_12H:avg": null,
+            "rain_average_12H:max": null,
+            "rain_average_12H:min": null,
+            "rain_accumulated_12H:max": "rain_accumulated_12H:max",
+            "rain_accumulated_12H:min": null,
+            "rain_peak_24H:max": null,
+            "rain_peak_24H:avg": null,
+            "rain_average_24H:avg": null,
+            "rain_average_24H:max": null,
+            "rain_average_24H:min": null,
+            "rain_accumulated_24H:max": null,
+            "rain_accumulated_24H:min": null,
+            "time_run": "time_run",
+            "time_start": "time_start",
+            "time_end": "time_end",
+            "period_tag": null,
+            "period_type": "period_type",
+            "period_id": null,
+            "latest_from": "latest_from"
+          }
+        },
+        "soil_moisture": {
+          "__comment__": "type: time_series [csv]",
+          "folder_name": "/home/fabio/Desktop/Workspace/sliper/ws/data_dynamic/destination/indicators_sm/{source_sub_path_time_sm}",
+          "file_name": "indicators_sm_{source_datetime_sm}_{alert_area_name}.csv",
+          "type": "vector",
+          "format": "csv",
+          "priority": "other",
+          "delimiter": ";",
+          "fields": {
+            "time": "time",
+            "sm_value_avg": null,
+            "sm_value_max": null,
+            "sm_value_first": "sm_value_first",
+            "sm_value_last": "sm_value_last",
+            "time_run": "time_run",
+            "time_start": "time_start",
+            "time_end": "time_end",
+            "period_tag": null,
+            "period_type": "period_type",
+            "period_id": null,
+            "latest_from": "latest_from"
+          }
+        },
+        "soil_slips": {
+          "__comment__": "type: vector [csv]",
+          "folder_name": "/home/fabio/Desktop/sliper/ws/data_dynamic/destination/soil_slips/",
+          "file_name": "soil_slips_202507140000_{alert_area_name}.csv",
+          "type": "vector",
+          "format": "csv",
+          "priority": "other",
+          "delimiter": ";",
+          "fields": {
+            "time": "time",
+            "year": null,
+            "month": null,
+            "day": null,
+            "soil_slips": "soil_slips",
+            "id": "id",
+            "area_label": "area_label",
+            "alert_color": "alert_color",
+            "alert_rgb": "alert_rgb",
+            "latest_from": "latest_from"
+          }
+        }
+      },
+      "ancillary": {
+        "datasets": {
+          "folder_name": "/home/fabio/Desktop/Workspace/sliper/ws/data_dynamic/ancillary/scenarios/{ancillary_sub_path_time}",
+          "file_name": "scenarios_datasets_{ancillary_datetime_run}_{alert_area_name}.workspace"
+        },
+        "analysis": {
+          "folder_name": "/home/fabio/Desktop/Workspace/sliper/ws/data_dynamic/ancillary/scenarios/{ancillary_sub_path_time}",
+          "file_name": "scenarios_analysis_{ancillary_datetime_run}_{alert_area_name}.workspace"
+        }
+      },
+      "destination": {
+        "__comment__": "type: vector [csv]",
+        "folder_name": "/home/fabio/Desktop/Workspace/sliper/ws/data_dynamic/destination/scenarios/{destination_sub_path_time}",
+        "file_name": "scenarios_{destination_datetime_run}_{alert_area_name}.csv",
+        "type": "vector",
+        "format": "csv",
+        "delimiter": ";",
+        "fields": {}
+      }
+    }
+  },
+  "tmp": {
+    "folder_name": "/home/fabio/Desktop/Workspace/sliper/ws/tmp/",
+    "file_name": null
+  },
+  "log": {
+    "folder_name": "/home/fabio/Desktop/Workspace/sliper/ws/log/",
+    "file_name": "sliper_scenarios_log.txt"
+  },
+  "time": {
+    "__comment__": "(1) frequency=D, period=n, rounding=D :: (2): frequency=H, period=1, rounding=H",
+    "time_now": null,
+    "time_period": 4,
+    "time_frequency": "D",
+    "time_rounding": "D",
+    "time_start": null,
+    "time_end": null
+  }
+}

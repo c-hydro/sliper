@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 """
-SLIPER APP - SM INDICATORS PROCESSING - Soil Landslide Information and Prediction & Early Response
+SLIPER APP - SCENARIOS PROCESSING - Soil Landslide Information and Prediction & Early Response
 
-__date__ = '20250709'
+__date__ = '20250721'
 __version__ = '2.5.0'
 __author__ =
         'Fabio Delogu (fabio.delogu@cimafoundation.org',
@@ -13,7 +13,7 @@ __author__ =
 __library__ = 'sliper'
 
 General command line:
-python app_indicators_sm_main.py -settings_file configuration.json -time "YYYY-MM-DD HH:MM"
+python app_scenarios_main.py -settings_file configuration.json -time "YYYY-MM-DD HH:MM"
 
 Version(s):
 20250620 (2.5.0) --> Beta release for sliper package based on previous package(s) and version(s)
@@ -37,8 +37,7 @@ import logging
 import time
 import os
 
-from driver_geo_reference import DriverGeoReference
-from driver_geo_alert_area import DriverGeoAlertArea
+from driver_geo import DriverGeo
 from driver_data import DriverData
 
 from argparse import ArgumentParser
@@ -55,10 +54,10 @@ log_stream = logging.getLogger(logger_name)
 # ----------------------------------------------------------------------------------------------------------------------
 # Algorithm information
 project_name = 'sliper'
-alg_name = 'SLIPER APP - SOIL MOISTURE INDICATORS PROCESSING'
+alg_name = 'SLIPER APP - SCENARIOS PROCESSING'
 alg_type = 'Package'
 alg_version = '2.5.0'
-alg_release = '2025-07-09'
+alg_release = '2025-07-21'
 # ----------------------------------------------------------------------------------------------------------------------
 
 
@@ -99,38 +98,23 @@ def main():
         time_run_file_start=data_settings['time']['time_start'],
         time_run_file_end=data_settings['time']['time_end'],
         time_format=time_format_algorithm,
-        time_period_observed=data_settings['time']['time_period']['observed'],
-        time_period_forecast=data_settings['time']['time_period']['forecast'],
+        time_period=data_settings['time']['time_period'],
         time_frequency=data_settings['time']['time_frequency'],
-        time_rounding=data_settings['time']['time_rounding']
+        time_rounding=data_settings['time']['time_rounding'],
+        time_reverse=False
     )
     # ------------------------------------------------------------------------------------------------------------------
 
     # ------------------------------------------------------------------------------------------------------------------
     # Geographical datasets
-    driver_geo_reference = DriverGeoReference(
-        src_dict=data_settings['data']['static']['reference']['source'],
-        dst_dict=data_settings['data']['static']['reference']['destination'],
+    driver_geo = DriverGeo(
+        src_dict=data_settings['data']['static']['source'],
+        dst_dict=data_settings['data']['static']['destination'],
         tmp_dict=data_settings['tmp'],
         tags_dict=data_settings['algorithm']['template'],
         flag_update=data_settings['algorithm']['flags']['update_static'])
     # organize geo collections
-    geo_data_collection_ref = driver_geo_reference.organize_data()
-    # ------------------------------------------------------------------------------------------------------------------
-
-    # ------------------------------------------------------------------------------------------------------------------
-    # Geographical datasets
-    driver_geo_alert_area = DriverGeoAlertArea(
-        src_dict=data_settings['data']['static']['alert_area']['source'],
-        anc_dict=data_settings['data']['static']['alert_area']['ancillary'],
-        dst_dict=data_settings['data']['static']['alert_area']['destination'],
-        info_dict=data_settings['algorithm']['info'],
-        tmp_dict=data_settings['tmp'],
-        tags_dict=data_settings['algorithm']['template'],
-        flag_update=data_settings['algorithm']['flags']['update_static'])
-    # organize geo collections
-    (geo_info_aa,
-     geo_data_collections_aa, geo_point_collections_aa) = driver_geo_alert_area.organize_data()
+    geo_data = driver_geo.organize_data()
     # ------------------------------------------------------------------------------------------------------------------
 
     # ------------------------------------------------------------------------------------------------------------------
@@ -141,12 +125,9 @@ def main():
         anc_dict=data_settings['data']['dynamic']['ancillary'],
         dst_dict=data_settings['data']['dynamic']['destination'],
         tags_dict=data_settings['algorithm']['template'],
-        collections_data_geo_grid_ref=geo_data_collection_ref,
-        collections_data_geo_info=geo_info_aa,
-        collections_data_geo_grid_other=geo_data_collections_aa,
-        collections_data_geo_pnt_other=geo_point_collections_aa,
-        flag_update_anc_grid=data_settings['algorithm']['flags']['update_dynamic_ancillary_grid'],
-        flag_update_anc_ts=data_settings['algorithm']['flags']['update_dynamic_ancillary_ts'],
+        geo_dict=geo_data,
+        flag_update_anc_datasets=data_settings['algorithm']['flags']['update_dynamic_ancillary_datasets'],
+        flag_update_anc_analysis=data_settings['algorithm']['flags']['update_dynamic_ancillary_analysis'],
         flag_update_dst=data_settings['algorithm']['flags']['update_dynamic_destination'])
 
     # method to organize data collections

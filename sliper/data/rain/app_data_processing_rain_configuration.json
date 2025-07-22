@@ -86,7 +86,7 @@
     "time_period": 60,
     "time_frequency": "H",
     "time_rounding": "H",
-    "time_start": null,
-    "time_end": null
+    "time_start": "2023-01-01 00:00",
+    "time_end": "2023-01-16 00:00"
   }
 }
