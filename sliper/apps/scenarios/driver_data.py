@@ -21,7 +21,8 @@ from copy import deepcopy
 from lib_data_io_csv import read_file_csv, write_file_csv
 from lib_data_io_pickle import read_obj, write_obj
 
-from lib_utils_data_scenarios import read_data, merge_data_by_time, merge_data_by_vars, memorize_data, fill_data
+from lib_utils_data_scenarios import (
+    read_data, merge_data_by_time, merge_data_by_vars, memorize_data, fill_data, format_data, keep_unique_time_columns)
 from lib_utils_geo import resample_data, mask_data, transform_data2ts
 from lib_utils_generic import fill_template_string
 from lib_utils_generic import extract_subpart, dict2flat, flat2dict, fields2dict
@@ -58,41 +59,47 @@ class DriverData:
 
         self.file_name_tag, self.folder_name_tag = 'file_name', 'folder_name'
         self.format_tag, self.type_tag, self.delimiter_tag = 'format', 'type', 'delimiter'
-        self.fields_tag = 'fields'
+        self.fields_tag, self.prefix_tag, self.variable_tag = 'fields', 'prefix', 'variable'
         self.var_name_x_tag, self.var_name_y_tag = 'longitude', 'latitude'
 
-        self.var_name_rain = 'rain'
-        self.var_name_sm = 'soil_moisture'
-        self.var_name_slips = 'soil_slips'
+        self.name_rain_tag = 'rain'
+        self.name_sm_tag = 'soil_moisture'
+        self.name_slips_tag = 'soil_slips'
 
         # get geographical information
         self.geo_data = geo_dict
 
         # get file names and folder names source (rain, sm, soil_slips)
-        self.file_name_src_rain = src_dict[self.var_name_rain][self.file_name_tag]
-        self.folder_name_src_rain = src_dict[self.var_name_rain][self.folder_name_tag]
+        self.file_name_src_rain = src_dict[self.name_rain_tag][self.file_name_tag]
+        self.folder_name_src_rain = src_dict[self.name_rain_tag][self.folder_name_tag]
         self.path_name_src_rain = os.path.join(self.folder_name_src_rain, self.file_name_src_rain)
-        self.format_src_rain = src_dict[self.var_name_rain][self.format_tag]
-        self.type_src_rain = src_dict[self.var_name_rain][self.type_tag]
-        self.fields_src_rain = src_dict[self.var_name_rain][self.fields_tag]
-        self.delimiter_src_rain = src_dict[self.var_name_rain][self.delimiter_tag]
-        self.fields_src_rain = src_dict[self.var_name_rain][self.fields_tag]
+        self.format_src_rain = src_dict[self.name_rain_tag][self.format_tag]
+        self.type_src_rain = src_dict[self.name_rain_tag][self.type_tag]
+        self.fields_src_rain = src_dict[self.name_rain_tag][self.fields_tag]
+        self.delimiter_src_rain = src_dict[self.name_rain_tag][self.delimiter_tag]
+        self.fields_src_rain = src_dict[self.name_rain_tag][self.fields_tag]
+        self.prefix_src_rain = src_dict[self.name_rain_tag][self.prefix_tag]
+        self.variable_src_rain = src_dict[self.name_rain_tag][self.variable_tag]
 
-        self.file_name_src_sm = src_dict[self.var_name_sm][self.file_name_tag]
-        self.folder_name_src_sm = src_dict[self.var_name_sm][self.folder_name_tag]
+        self.file_name_src_sm = src_dict[self.name_sm_tag][self.file_name_tag]
+        self.folder_name_src_sm = src_dict[self.name_sm_tag][self.folder_name_tag]
         self.path_name_src_sm = os.path.join(self.folder_name_src_sm, self.file_name_src_sm)
-        self.format_src_sm = src_dict[self.var_name_sm][self.format_tag]
-        self.type_src_sm = src_dict[self.var_name_sm][self.type_tag]
-        self.delimiter_src_sm = src_dict[self.var_name_sm][self.delimiter_tag]
-        self.fields_src_sm = src_dict[self.var_name_sm][self.fields_tag]
+        self.format_src_sm = src_dict[self.name_sm_tag][self.format_tag]
+        self.type_src_sm = src_dict[self.name_sm_tag][self.type_tag]
+        self.delimiter_src_sm = src_dict[self.name_sm_tag][self.delimiter_tag]
+        self.fields_src_sm = src_dict[self.name_sm_tag][self.fields_tag]
+        self.prefix_src_sm = src_dict[self.name_sm_tag][self.prefix_tag]
+        self.variable_src_sm = src_dict[self.name_sm_tag][self.variable_tag]
 
-        self.file_name_src_slips = src_dict[self.var_name_slips][self.file_name_tag]
-        self.folder_name_src_slips = src_dict[self.var_name_slips][self.folder_name_tag]
+        self.file_name_src_slips = src_dict[self.name_slips_tag][self.file_name_tag]
+        self.folder_name_src_slips = src_dict[self.name_slips_tag][self.folder_name_tag]
         self.path_name_src_slips = os.path.join(self.folder_name_src_slips, self.file_name_src_slips)
-        self.format_src_slips = src_dict[self.var_name_slips][self.format_tag]
-        self.type_src_slips = src_dict[self.var_name_slips][self.type_tag]
-        self.delimiter_src_slips = src_dict[self.var_name_slips][self.delimiter_tag]
-        self.fields_src_slips = src_dict[self.var_name_slips][self.fields_tag]
+        self.format_src_slips = src_dict[self.name_slips_tag][self.format_tag]
+        self.type_src_slips = src_dict[self.name_slips_tag][self.type_tag]
+        self.delimiter_src_slips = src_dict[self.name_slips_tag][self.delimiter_tag]
+        self.fields_src_slips = src_dict[self.name_slips_tag][self.fields_tag]
+        self.prefix_src_slips = src_dict[self.name_slips_tag][self.prefix_tag]
+        self.variable_src_slips = src_dict[self.name_slips_tag][self.variable_tag]
 
         # get file names and folder names ancillary datasets and analysis
         self.file_name_anc_dset = anc_dict['datasets'][self.file_name_tag]
@@ -111,6 +118,8 @@ class DriverData:
         self.type_dst = dst_dict[self.type_tag]
         self.delimiter_dst = dst_dict[self.delimiter_tag]
         self.fields_dst = dst_dict[self.fields_tag]
+        self.prefix_dst = dst_dict[self.prefix_tag]
+        self.variable_dst = dst_dict[self.variable_tag]
 
         # flags to update datasets ancillary and destination
         self.flag_update_anc_dset = flag_update_anc_datasets
@@ -161,14 +170,17 @@ class DriverData:
             if not os.path.exists(path_name_dst):
 
                 # get analysis collections
-                analysis_collections = analysis_workspace[geo_key]
-                analysis_collections.index.name = 'time'
+                analysis_collections_raw = analysis_workspace[geo_key]
+                # format analysis collections
+                analysis_collections_fmt = format_data(analysis_collections_raw, fields=self.fields_dst)
+                # clean time columns (to keep unique time columns)
+                analysis_collections_fmt = keep_unique_time_columns(analysis_collections_fmt)
 
                 # save data in file object
                 folder_name_dst, file_name_dst = os.path.split(path_name_dst)
                 os.makedirs(folder_name_dst, exist_ok=True)
 
-                write_file_csv(analysis_collections, filename=path_name_dst, orientation='cols')
+                write_file_csv(analysis_collections_fmt, filename=path_name_dst, orientation='cols')
 
                 # info area end
                 log_stream.info(' -----> Area "' + str(geo_key) + '" ... DONE')
@@ -239,9 +251,9 @@ class DriverData:
                 # get data collections
                 datasets_collections = datasets_workspace[geo_key]
                 # get data variables
-                df_rain = datasets_collections[self.var_name_rain]
-                df_sm = datasets_collections[self.var_name_sm]
-                df_slips = datasets_collections[self.var_name_slips]
+                df_rain = datasets_collections[self.variable_src_rain]
+                df_sm = datasets_collections[self.variable_src_sm]
+                df_slips = datasets_collections[self.variable_src_slips]
 
                 # info get analysis end
                 log_stream.info(' ------> Get analysis data ... DONE')
@@ -250,7 +262,12 @@ class DriverData:
                 log_stream.info(' ------> Compute analysis data ... ')
 
                 # define analysis collections
-                analysis_collections_merged = merge_data_by_vars(time_start, time_end, df_rain, df_sm, df_slips)
+                analysis_collections_merged = merge_data_by_vars(
+                    time_start, time_end,
+                    df_rain, df_sm, df_slips,
+                    rain_var=self.variable_src_rain, sm_var=self.variable_src_sm, slips_var=self.variable_src_slips,
+                    time_label='time', time_frequency='D')
+
                 # fill analysis collections (by nans)
                 analysis_collections_filled = fill_data(analysis_collections_merged)
 
@@ -396,9 +413,10 @@ class DriverData:
                     if status_rain:
                         # method to read data rain
                         df_step_rain = read_data(
-                            file_data=path_name_src_rain, var_data=self.var_name_rain,
+                            file_data=path_name_src_rain, var_data=self.variable_src_rain,
                             type_data=self.type_src_rain, format_data=self.format_src_rain,
-                            fields_data=self.fields_src_rain, delimiter_data=self.delimiter_src_rain)
+                            fields_data=self.fields_src_rain, delimiter_data=self.delimiter_src_rain,
+                            prefix_key=self.prefix_src_rain, prefix_delimiter='_')
 
                         # check data status (after reading)
                         memory_rain, _ = memorize_data(memory_rain, path_name_src_rain)
@@ -411,9 +429,10 @@ class DriverData:
                     if status_sm:
                         # method to read data soil moisture
                         df_step_sm = read_data(
-                            file_data=path_name_src_sm, var_data=self.var_name_sm,
+                            file_data=path_name_src_sm, var_data=self.variable_src_sm,
                             type_data=self.type_src_sm, format_data=self.format_src_sm,
-                            fields_data=self.fields_src_sm, delimiter_data=self.delimiter_src_sm)
+                            fields_data=self.fields_src_sm, delimiter_data=self.delimiter_src_sm,
+                            prefix_key=self.prefix_src_sm, prefix_delimiter='_')
                         # check data status (after reading)
                         memory_sm, _ = memorize_data(memory_sm, path_name_src_sm)
 
@@ -426,9 +445,10 @@ class DriverData:
 
                         # method to read data soil slips
                         df_step_slips = read_data(
-                            file_data=path_name_src_slips, var_data=self.var_name_slips,
+                            file_data=path_name_src_slips, var_data=self.variable_src_slips,
                             type_data=self.type_src_slips, format_data=self.format_src_slips,
-                            fields_data=self.fields_src_slips, delimiter_data=self.delimiter_src_slips)
+                            fields_data=self.fields_src_slips, delimiter_data=self.delimiter_src_slips,
+                            prefix_key=self.prefix_src_slips, prefix_delimiter='_')
 
                         # check data status (after reading)
                         memory_slips, _ = memorize_data(memory_slips, path_name_src_slips)
@@ -442,15 +462,18 @@ class DriverData:
                     # method to merge data rain
                     if df_step_rain is not None:
                         df_common_rain = merge_data_by_time(
-                            df_common_rain, df_step_rain, key_cols=['time_start', 'time_end'])
+                            df_common_rain, df_step_rain, key_cols=['{:}_time_start', '{:}_time_end'],
+                            prefix_keys=self.prefix_src_rain)
 
                     if df_step_sm is not None:
                         df_common_sm = merge_data_by_time(
-                            df_common_sm, df_step_sm, key_cols=['time_start', 'time_end'])
+                            df_common_sm, df_step_sm, key_cols=['{:}_time_start', '{:}_time_end'],
+                            prefix_keys=self.prefix_src_sm)
 
                     if df_step_slips is not None:
                         df_common_slips = merge_data_by_time(
-                            df_common_slips, df_step_slips, key_cols=None)
+                            df_common_slips, df_step_slips, key_cols=None,
+                            prefix_keys=self.prefix_src_slips)
 
                     # info get merge end
                     log_stream.info(' -------> Merge source data ... DONE')
@@ -460,9 +483,9 @@ class DriverData:
 
                 # organize datasets collections
                 datasets_collections = {
-                    self.var_name_rain: df_common_rain,
-                    self.var_name_sm: df_common_sm,
-                    self.var_name_slips: df_common_slips}
+                    self.variable_src_rain: df_common_rain,
+                    self.variable_src_sm: df_common_sm,
+                    self.variable_src_slips: df_common_slips}
 
                 # organize datasets workspace
                 datasets_workspace[geo_key] = datasets_collections

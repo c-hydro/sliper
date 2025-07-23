@@ -57,8 +57,9 @@
           "file_name": "indicators_rain_{source_datetime_rain}_{alert_area_name}.csv",
           "type": "vector",
           "format": "csv",
-          "priority": "reference",
           "delimiter": ";",
+          "variable": "rain",
+          "prefix": "rain",
           "fields": {
             "time": "time",
             "rain_peak_3H:max": "rain_peak_3H:max",
@@ -89,13 +90,13 @@
             "rain_average_24H:min": null,
             "rain_accumulated_24H:max": null,
             "rain_accumulated_24H:min": null,
-            "time_run": "time_run",
-            "time_start": "time_start",
-            "time_end": "time_end",
-            "period_tag": null,
-            "period_type": "period_type",
-            "period_id": null,
-            "latest_from": "latest_from"
+            "rain_time_run": "time_run",
+            "rain_time_start": "time_start",
+            "rain_time_end": "time_end",
+            "rain_period_tag": null,
+            "rain_period_type": "period_type",
+            "rain_period_id": null,
+            "rain_latest_from": "latest_from"
           }
         },
         "soil_moisture": {
@@ -104,21 +105,22 @@
           "file_name": "indicators_sm_{source_datetime_sm}_{alert_area_name}.csv",
           "type": "vector",
           "format": "csv",
-          "priority": "other",
           "delimiter": ";",
+          "variable": "soil_moisture",
+          "prefix": "sm",
           "fields": {
             "time": "time",
             "sm_value_avg": null,
             "sm_value_max": null,
             "sm_value_first": "sm_value_first",
             "sm_value_last": "sm_value_last",
-            "time_run": "time_run",
-            "time_start": "time_start",
-            "time_end": "time_end",
-            "period_tag": null,
-            "period_type": "period_type",
-            "period_id": null,
-            "latest_from": "latest_from"
+            "sm_time_run": "time_run",
+            "sm_time_start": "time_start",
+            "sm_time_end": "time_end",
+            "sm_period_tag": null,
+            "sm_period_type": "period_type",
+            "sm_period_id": null,
+            "sm_latest_from": "latest_from"
           }
         },
         "soil_slips": {
@@ -127,19 +129,20 @@
           "file_name": "soil_slips_202507140000_{alert_area_name}.csv",
           "type": "vector",
           "format": "csv",
-          "priority": "other",
           "delimiter": ";",
+          "variable": "soil_slips",
+          "prefix": "slips",
           "fields": {
             "time": "time",
-            "year": null,
-            "month": null,
-            "day": null,
-            "soil_slips": "soil_slips",
-            "id": "id",
-            "area_label": "area_label",
-            "alert_color": "alert_color",
-            "alert_rgb": "alert_rgb",
-            "latest_from": "latest_from"
+            "slips_year": null,
+            "slips_month": null,
+            "slips_day": null,
+            "slips_n": "soil_slips",
+            "slips_id": "id",
+            "slips_area_label": "area_label",
+            "slips_alert_color": "alert_color",
+            "slips_alert_rgb": "alert_rgb",
+            "slips_latest_from": "latest_from"
           }
         }
       },
@@ -160,7 +163,31 @@
         "type": "vector",
         "format": "csv",
         "delimiter": ";",
-        "fields": {}
+        "variable": "scenarios",
+        "prefix": "scenarios",
+        "fields": {
+          "time": "time",
+          "rain_peak_3H:max": "rain_peak_3H:max",
+          "rain_accumulated_12H:max": "rain_accumulated_12H:max",
+          "rain_time_run": "rain_time_run",
+          "rain_time_start": "rain_time_start",
+          "rain_time_end": "rain_time_end",
+          "rain_period_type": "rain_period_type",
+          "rain_latest_from": "rain_latest_from",
+          "sm_value_first": "sm_value_first",
+          "sm_value_last": "sm_value_last",
+          "sm_time_run": "sm_time_run",
+          "sm_time_start": "sm_time_start",
+          "sm_time_end": "sm_time_end",
+          "sm_period_type": "sm_period_type",
+          "sm_latest_from": "sm_latest_from",
+          "slips_n": "slips_n",
+          "slips_id": "slips_id",
+          "slips_area_label": null,
+          "slips_alert_color": "slips_alert_color",
+          "slips_alert_rgb": "slips_alert_rgb",
+          "slips_latest_from": null
+        }
       }
     }
   },
