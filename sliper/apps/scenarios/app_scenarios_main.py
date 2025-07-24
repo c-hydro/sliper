@@ -131,9 +131,9 @@ def main():
         flag_update_dst=data_settings['algorithm']['flags']['update_dynamic_destination'])
 
     # method to organize data collections
-    data_collections = driver_data.organize_data()
+    data_collections, time_collections = driver_data.organize_data()
     # method to analyze data collections
-    analysis_collections = driver_data.analyze_data(data_collections)
+    analysis_collections = driver_data.analyze_data(data_collections, time_collections)
     # method to dump data collections
     driver_data.dump_data(analysis_collections)
     # ------------------------------------------------------------------------------------------------------------------

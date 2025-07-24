@@ -25,70 +25,90 @@ from lib_info_args import logger_name
 log_stream = logging.getLogger(logger_name)
 # ----------------------------------------------------------------------------------------------------------------------
 
+# ----------------------------------------------------------------------------------------------------------------------
+# method to analyze data alignment
+def analyze_data_alignment(
+        time_run, time_range,
+        df1, df2, df3,
+        dn1='rain', dn2='sm', dn3='slips',
+        time_col='time', freq=None,
+        use1=True, use2=True, use3=True):
+    """
+    Analyzes common time periods, missing timestamps, and data completeness stats for three DataFrames.
 
-def keep_unique_time_columns(df, time_col='time'):
-    time_cols = [col for col in df.columns if time_col in col.lower()]
-    unique_time_cols = []
-    seen = []
+    Returns:
+        dict with:
+            - 'time_reference': str
+            - 'time_period_ref': (start, end)
+            - 'time_period_data': (start, end)
+            - 'frequency': frequency string
+            - 'missing': dict of missing timestamps
+            - 'stats': dict with expected/found/completeness per dataset
+    """
+    import pandas as pd
 
-    for col in time_cols:
-        is_duplicate = False
-        for seen_col in seen:
-            if df[col].equals(df[seen_col]):
-                is_duplicate = True
-                break
-        if not is_duplicate:
-            unique_time_cols.append(col)
-            seen.append(col)
+    # Step 1: Ensure datetime and sort
+    for df in [df1, df2, df3]:
+        df[time_col] = pd.to_datetime(df[time_col])
+        df.sort_values(by=time_col, inplace=True)
 
-    # Keep only non-duplicate time columns + all non-time columns
-    non_time_cols = [col for col in df.columns if col not in time_cols]
-    cleaned_df = df[non_time_cols + unique_time_cols]
+    # Step 2: Select which DataFrames to include in time alignment
+    periods = []
+    if use1:
+        periods.append((df1[time_col].min(), df1[time_col].max()))
+    if use2:
+        periods.append((df2[time_col].min(), df2[time_col].max()))
+    if use3:
+        periods.append((df3[time_col].min(), df3[time_col].max()))
 
-    return cleaned_df
+    if not periods:
+        raise ValueError("At least one dataset must be included to determine the common time period.")
 
+    # Step 3: Find common start and end
+    start = max(start for start, _ in periods)
+    end = min(end for _, end in periods)
+
+    if start >= end:
+        raise ValueError("No overlapping time range between the selected datasets.")
+
+    # Step 4: Determine frequency
+    if not freq:
+        freq = pd.infer_freq(df1[time_col])
+        if freq is None:
+            freq = 'D'  # fallback default
+    expected_range = pd.date_range(start=start, end=end, freq=freq)
+
+    # Step 5: Find missing timestamps and compute stats
+    def find_missing_and_stats(df):
+        trimmed = df[(df[time_col] >= start) & (df[time_col] <= end)]
+        found = trimmed[time_col].nunique()
+        expected = len(expected_range)
+        missing = expected_range.difference(trimmed[time_col])
+        percent = round((found / expected) * 100, 2) if expected > 0 else 0.0
+        return missing, expected, found, percent
+
+    missing1, exp1, found1, perc1 = find_missing_and_stats(df1)
+    missing2, exp2, found2, perc2 = find_missing_and_stats(df2)
+    missing3, exp3, found3, perc3 = find_missing_and_stats(df3)
+
+    return {
+        'time_reference': time_run,
+        'time_period_ref': (time_range[0], time_range[-1]),
+        'time_period_data': (start, end),
+        'frequency': freq,
+        'missing': {
+            dn1: missing1,
+            dn2: missing2,
+            dn3: missing3,
+        },
+        'stats': {
+            dn1: {'expected': exp1, 'found': found1, 'percent': perc1},
+            dn2: {'expected': exp2, 'found': found2, 'percent': perc2},
+            dn3: {'expected': exp3, 'found': found3, 'percent': perc3},
+        }
+    }
 
 # ----------------------------------------------------------------------------------------------------------------------
-# method to format data
-def format_data(df, fields=None):
-    # Step 1: Drop 'time' column if redundant with index
-    if df.index.name in df.columns and df[df.index.name].equals(df.index.to_series()):
-        df = df.drop(columns=[df.index.name])
-
-    # Step 2: Standardize column names
-    df.columns = [col.strip().lower().replace(' ', '_') for col in df.columns]
-
-    # Step 3: Replace sentinel values
-    sentinel_values = ['NA', 'na', -9999, '-9999', '', None]
-    df = df.replace(sentinel_values, np.nan)
-
-    # Step 4: Attempt to parse datetime columns (non-numeric objects only)
-    for col in df.columns:
-        if df[col].dtype == object:
-            df[col] = pd.to_datetime(df[col], errors='coerce')
-
-    # Step 5: Format datetime columns to string (ISO-like)
-    for col in df.select_dtypes(include='datetime'):
-        df[col] = df[col].dt.strftime('%Y-%m-%d %H:%M:%S')
-
-    # Step 6: Apply custom field name mappings
-    if fields:
-        for original, new_name in fields.items():
-            if original not in df.columns:
-                warnings.warn(f"Column '{original}' not found in DataFrame.", UserWarning)
-            elif new_name is None:
-                df = df.drop(columns=[original])
-            else:
-                df = df.rename(columns={original: new_name})
-
-    # Step 7: Reset index if named and ensure it's included
-    if df.index.name is not None:
-        df = df.reset_index()
-
-    return df
-
-# ----------------------------------------------------------------------------------------------------------------------
-
 
 # ----------------------------------------------------------------------------------------------------------------------
 # method to memorize data to archive

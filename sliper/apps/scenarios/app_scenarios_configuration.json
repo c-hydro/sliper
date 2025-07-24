@@ -202,7 +202,7 @@
   "time": {
     "__comment__": "(1) frequency=D, period=n, rounding=D :: (2): frequency=H, period=1, rounding=H",
     "time_now": null,
-    "time_period": 4,
+    "time_period": 5,
     "time_frequency": "D",
     "time_rounding": "D",
     "time_start": null,

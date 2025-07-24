@@ -13,7 +13,6 @@ Version:       '1.0.0'
 import logging
 import warnings
 import os
-import rasterio
 from osgeo import osr, ogr, gdal
 
 import geopandas as gpd

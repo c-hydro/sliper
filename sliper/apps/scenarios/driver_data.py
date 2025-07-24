@@ -22,10 +22,11 @@ from lib_data_io_csv import read_file_csv, write_file_csv
 from lib_data_io_pickle import read_obj, write_obj
 
 from lib_utils_data_scenarios import (
-    read_data, merge_data_by_time, merge_data_by_vars, memorize_data, fill_data, format_data, keep_unique_time_columns)
-from lib_utils_geo import resample_data, mask_data, transform_data2ts
+    read_data, merge_data_by_time, merge_data_by_vars, memorize_data, fill_data, analyze_data_alignment,
+    format_data, keep_unique_time_columns)
+
 from lib_utils_generic import fill_template_string
-from lib_utils_generic import extract_subpart, dict2flat, flat2dict, fields2dict
+from lib_utils_generic import extract_subpart
 
 from lib_info_args import logger_name
 
@@ -170,17 +171,13 @@ class DriverData:
             if not os.path.exists(path_name_dst):
 
                 # get analysis collections
-                analysis_collections_raw = analysis_workspace[geo_key]
-                # format analysis collections
-                analysis_collections_fmt = format_data(analysis_collections_raw, fields=self.fields_dst)
-                # clean time columns (to keep unique time columns)
-                analysis_collections_fmt = keep_unique_time_columns(analysis_collections_fmt)
+                analysis_collections = analysis_workspace[geo_key]
 
                 # save data in file object
                 folder_name_dst, file_name_dst = os.path.split(path_name_dst)
                 os.makedirs(folder_name_dst, exist_ok=True)
 
-                write_file_csv(analysis_collections_fmt, filename=path_name_dst, orientation='cols')
+                write_file_csv(analysis_collections, filename=path_name_dst, orientation='cols')
 
                 # info area end
                 log_stream.info(' -----> Area "' + str(geo_key) + '" ... DONE')
@@ -196,16 +193,13 @@ class DriverData:
 
     # ------------------------------------------------------------------------------------------------------------------
     # method to analyze data
-    def analyze_data(self, datasets_workspace: dict):
+    def analyze_data(self, datasets_workspace: dict, time_workspace: dict):
 
         # info method start
         log_stream.info(' ----> Analyze dynamic data [' + str(self.time_run) + '] ... ')
 
         # get time info
         time_run = self.time_run
-        time_range = self.time_range
-        time_start, time_end = time_range[0], time_range[-1]
-
         # get group information
         geo_data = self.geo_data
 
@@ -250,10 +244,16 @@ class DriverData:
 
                 # get data collections
                 datasets_collections = datasets_workspace[geo_key]
+                # get time collections
+                time_collections = time_workspace[geo_key]
+
                 # get data variables
                 df_rain = datasets_collections[self.variable_src_rain]
                 df_sm = datasets_collections[self.variable_src_sm]
                 df_slips = datasets_collections[self.variable_src_slips]
+
+                # get time variables
+                time_period_data, time_period_ref = time_collections['time_period_data'], time_collections['time_period_ref']
 
                 # info get analysis end
                 log_stream.info(' ------> Get analysis data ... DONE')
@@ -263,7 +263,7 @@ class DriverData:
 
                 # define analysis collections
                 analysis_collections_merged = merge_data_by_vars(
-                    time_start, time_end,
+                    time_period_data[0], time_period_data[-1],
                     df_rain, df_sm, df_slips,
                     rain_var=self.variable_src_rain, sm_var=self.variable_src_sm, slips_var=self.variable_src_slips,
                     time_label='time', time_frequency='D')
@@ -323,12 +323,12 @@ class DriverData:
         geo_data = self.geo_data
 
         # iterate over groups
-        datasets_workspace = {}
+        datasets_workspace, time_workspace = {}, {}
         for geo_key, geo_info in geo_data.items():
 
             # info time start
             log_stream.info(' -----> Area "' + str(geo_key) + '" ...' )
-            datasets_workspace[geo_key] = {}
+            datasets_workspace[geo_key], time_workspace[geo_key] = {}, {}
 
             # define ancillary path names
             path_name_anc_dset = fill_template_string(
@@ -481,6 +481,14 @@ class DriverData:
                     # info time start
                     log_stream.info(' ------> Time "' + str(time_step) + '" ... DONE')
 
+                # organize time collections
+                time_collections = analyze_data_alignment(
+                    time_run, self.time_range,
+                    df_common_rain, df_common_sm, df_common_slips,
+                    dn1=self.variable_src_rain, dn2=self.variable_src_sm, dn3=self.variable_src_slips,
+                    use1=True, use2=True, use3=False,
+                    time_col= 'time')
+
                 # organize datasets collections
                 datasets_collections = {
                     self.variable_src_rain: df_common_rain,
@@ -489,6 +497,8 @@ class DriverData:
 
                 # organize datasets workspace
                 datasets_workspace[geo_key] = datasets_collections
+                # organize time workspace
+                time_workspace[geo_key] = time_collections
 
                 # info save data start
                 log_stream.info(' ------> Save source data ... ')
@@ -497,7 +507,10 @@ class DriverData:
                 folder_name_anc, file_name_anc = os.path.split(path_name_anc_dset)
                 os.makedirs(folder_name_anc, exist_ok=True)
 
-                write_obj(path_name_anc_dset, datasets_collections)
+                # organize objects collections
+                obj_collections = {'datasets': datasets_collections, 'time': time_collections}
+
+                write_obj(path_name_anc_dset, obj_collections)
 
                 # info save data end
                 log_stream.info(' ------> Save source data ... DONE')
@@ -505,9 +518,13 @@ class DriverData:
             else:
 
                 # info data already exists
-                datasets_collections = read_obj(path_name_anc_dset)
-                # organize df workspace
+                obj_collections = read_obj(path_name_anc_dset)
+                datasets_collections, time_collections = obj_collections['datasets'], obj_collections['time']
+
+                # organize datasets workspace
                 datasets_workspace[geo_key] = datasets_collections
+                # organize time workspace
+                time_workspace[geo_key] = time_collections
 
             # info area end
             log_stream.info(' -----> Area "' + str(geo_key) + '" ... DONE')
@@ -515,7 +532,7 @@ class DriverData:
         # info method end
         log_stream.info(' ----> Organize dynamic data [' + str(self.time_run) + '] ... DONE')
 
-        return datasets_workspace
+        return datasets_workspace, time_workspace
 
     # ------------------------------------------------------------------------------------------------------------------
 
