@@ -1,0 +1,160 @@
+{
+  "algorithm": {
+    "general": {
+      "title": "Viewing tool for soil slips time-series",
+      "web-site": "",
+      "source": "Python library developed by CIMA Research Foundation",
+      "history": "1.0.0 [20240116]",
+      "project-info": "recolour",
+      "algorithm": "Algorithm developed by CIMA Research Foundation"
+    },
+    "flags": {
+      "reset_static": true,
+      "reset_dynamic_source": true,
+      "reset_dynamic_destination": true
+    },
+    "info": {
+      "alert_area_a": {
+        "name": "A",
+        "index": 1,
+        "warning_threshold" : {"white": [0,0], "green": [1,2], "yellow": [3,5], "orange": [6,13], "red": [14,null]},
+        "warning_index" : {"white": 0, "green": 1, "yellow": 2, "orange": 3, "red": 4},
+        "basin": ["Centa", "Imperiese", "Ponente", "Finalese"]
+      },
+      "alert_area_b": {
+        "name": "B",
+        "index": 2,
+        "warning_threshold" : {"white": [0,0], "green": [1,2], "yellow": [3,5], "orange": [6,13], "red": [14,null]},
+        "warning_index" : {"white": 0, "green": 1, "yellow": 2, "orange": 3, "red": 4},
+        "basin": ["Savonese", "CentroPonente", "PonenteGenovese", "LevanteGenovese"]
+      },
+      "alert_area_c": {
+        "name": "C",
+        "index": 3,
+        "warning_threshold" : {"white": [0,0], "green": [1,2], "yellow": [3,5], "orange": [6,13], "red": [14,null]},
+        "warning_index" : {"white": 0, "green": 1, "yellow": 2, "orange": 3, "red": 4},
+        "basin": ["Magra"]
+      },
+      "alert_area_d": {
+        "name": "D",
+        "index": 4,
+        "warning_threshold" : {"white": [0,0], "green": [1,2], "yellow": [3,5], "orange": [6,13], "red": [14,null]},
+        "warning_index" : {"white": 0, "green": 1, "yellow": 2, "orange": 3, "red": 4},
+        "basin": ["BormidaS", "BormidaM", "Erro", "OrbaStura"]
+      },
+      "alert_area_e": {
+        "name": "E",
+        "index": 5,
+        "warning_threshold" : {"white": [0,0], "green": [1,2], "yellow": [3,5], "orange": [6,13], "red": [14,null]},
+        "warning_index" : {"white": 0, "green": 1, "yellow": 2, "orange": 3, "red": 4},
+        "basin": ["Scrivia", "AvetoTrebbia"]
+      }
+    },
+    "template": {
+      "datasets": {
+        "registry_name": "string_registry_name",
+        "registry_code": "string_registry_code"
+      },
+      "time": {
+        "source_sub_path_time": "%Y/%m/%d/",
+        "source_datetime": "%Y%m%d0000",
+        "ancillary_sub_path_time": "%Y/%m/%d/",
+        "ancillary_datetime": "%Y%m%d",
+        "destination_sub_path_time": "%Y/%m/%d/",
+        "destination_datetime": "%Y%m%d"
+      }
+    }
+  },
+  "data": {
+    "static": {
+      "source": {
+        "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_static/alert_area/",
+        "file_name": "alert_area_epsg4326.shp"
+      },
+      "destination": {
+        "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_static/alert_area/",
+        "file_name": "alert_area_epsg4326.workspace"
+      }
+    },
+    "dynamic": {
+      "source": {
+        "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_dynamic/outcome/predictors/{source_sub_path_time}",
+        "file_name": "predictors_{source_datetime}.csv",
+        "format": "csv",
+        "fields": {
+          "soil_moisture": "sm_value_first",
+          "rain_peak": "rain_peak_3H",
+          "rain_accumulated": "rain_accumulated_12H",
+          "soil_slips_observed_events": "soil_slips_observed_n",
+          "soil_slips_predicted_events": "soil_slips_prediction_n",
+          "soil_slips_observed_alert_level": "soil_slips_observed_alert_level",
+          "soil_slips_predicted_alert_level": "soil_slips_prediction_alert_level",
+          "soil_slips_domain_name": "soil_slips_domain_name",
+          "time": "time"
+        },
+        "time_period": 30,
+        "time_frequency": "D",
+        "time_rounding": "D",
+        "value_no_data": -9999.0
+      },
+      "ancillary": {
+        "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_dynamic/ancillary/predictors/{ancillary_sub_path_time}",
+        "file_name": "predictors_{ancillary_datetime}.workspace"
+      },
+      "destination": {
+        "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_dynamic/destination/plots/{destination_sub_path_time}",
+        "file_name": "predictors_{destination_datetime}_{registry_name}.jpeg",
+        "format": "jpeg",
+        "fields": {
+          "soil_moisture": "sm_value_first",
+          "rain_peak": "rain_peak_3H",
+          "rain_accumulated": "rain_accumulated_12H",
+          "soil_slips_observed_events": "soil_slips_observed_n",
+          "soil_slips_predicted_events": "soil_slips_prediction_n",
+          "soil_slips_observed_alert_level": "soil_slips_observed_alert_level",
+          "soil_slips_predicted_alert_level": "soil_slips_prediction_alert_level",
+          "time": "time"
+        },
+        "title": "SoilSlips - Time Series \n Domain: {alert_area_name} -- Period: {time_start} - {time_end} ",
+        "label_axis_x_soil_moisture": "time [days]",
+        "label_axis_y_soil_moisture": "soil moisture [%]",
+        "label_axis_x_rain": "time [days]",
+        "label_axis_y_rain": "rain [mm]",
+        "legend": {
+          "soil_moisture": "soil moisture",
+          "rain_peak": "rain peak [3h]",
+          "rain_accumulated": "rain acc [12h]",
+          "soil_slips_observed_events": "obs n [-]",
+          "soil_slips_predicted_events": "pred n [-]",
+          "soil_slips_observed_alert_level": "obs warning level",
+          "soil_slips_predicted_alert_level": "pred warning level"
+        },
+        "style": {
+          "soil_moisture": {"marker": null, "color": "green", "linestyle": "-", "lw": 2, "ms": 4, "alpha": 1.0},
+          "rain_peak": {"marker": "o", "color": "blue", "linestyle": null, "lw": 0, "ms": 5, "alpha": 1.0},
+          "rain_accumulated": {"marker": null, "color": null, "linestyle": null, "lw": null, "ms": null, "alpha": 0.8},
+          "soil_slips_observed_events": {"marker": null, "color": null, "linestyle": null, "lw": 0, "ms": null, "alpha": 1.0},
+          "soil_slips_predicted_events": {"marker": null, "color": null, "linestyle": null, "lw": 0, "ms": null, "alpha": 1.0},
+          "soil_slips_observed_alert_level": {"marker": "o", "color": "green", "linestyle": "-", "lw": 0, "ms": 5, "alpha": 0.9},
+          "soil_slips_predicted_alert_level": {"marker": "x", "color": "red", "linestyle": "-", "lw": 0, "ms": 6, "alpha": 1.0}
+        }
+      }
+    }
+  },
+  "tmp": {
+    "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/tmp/",
+    "file_name": null
+  },
+  "log": {
+    "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/log/",
+    "file_name": "soil_slips_predictors_viewer_log.txt"
+  },
+  "time": {
+    "time_reference": null,
+    "time_period": 3,
+    "time_frequency": "D",
+    "time_rounding": "D",
+    "time_start": null,
+    "time_end": null
+  }
+}

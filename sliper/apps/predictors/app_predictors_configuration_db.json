@@ -1,0 +1,159 @@
+{
+  "algorithm": {
+    "general": {
+      "title": "Running tool for soil slips predictors",
+      "web-site": "",
+      "source": "Python library developed by ARPAL and CIMA Research Foundation",
+      "history": "1.3.0 [20221013]",
+      "project-info": "arpal",
+      "algorithm": "Algorithm developed by ARPAL and CIMA Research Foundation"
+    },
+    "flags": {
+      "__comment__": "running_mode values: kernel",
+      "running_mode": "fx_kernel",
+      "updating_static_data": true,
+      "updating_dynamic_ancillary": true,
+      "updating_dynamic_destination": true
+    },
+    "ancillary": {
+      "info": {
+        "methods": {
+          "fx_kernel" : {"kernel_type":  "polynomial", "kernel_exponent": 3}
+        }
+      },
+      "group" : {
+        "alert_area_a": {
+          "name": "A",
+          "index": 1,
+          "warning_threshold" : {"white": [0,0], "green": [1,2], "yellow": [3,5], "orange": [6,13], "red": [14,null]},
+          "warning_index" : {"white": 0, "green": 1, "yellow": 2, "orange": 3, "red": 4},
+          "basin": ["Centa", "Imperiese", "Ponente", "Finalese"]
+        },
+        "alert_area_b": {
+          "name": "B",
+          "index": 2,
+          "warning_threshold" : {"white": [0,0], "green": [1,2], "yellow": [3,5], "orange": [6,13], "red": [14,null]},
+          "warning_index" : {"white": 0, "green": 1, "yellow": 2, "orange": 3, "red": 4},
+          "basin": ["Savonese", "CentroPonente", "PonenteGenovese", "LevanteGenovese"]
+        },
+        "alert_area_c": {
+          "name": "C",
+          "index": 3,
+          "warning_threshold" : {"white": [0,0], "green": [1,2], "yellow": [3,5], "orange": [6,13], "red": [14,null]},
+          "warning_index" : {"white": 0, "green": 1, "yellow": 2, "orange": 3, "red": 4},
+          "basin": ["Magra"]
+        },
+        "alert_area_d": {
+          "name": "D",
+          "index": 4,
+          "warning_threshold" : {"white": [0,0], "green": [1,2], "yellow": [3,5], "orange": [6,13], "red": [14,null]},
+          "warning_index" : {"white": 0, "green": 1, "yellow": 2, "orange": 3, "red": 4},
+          "basin": ["BormidaS", "BormidaM", "Erro", "OrbaStura"]
+        },
+        "alert_area_e": {
+          "name": "E",
+          "index": 5,
+          "warning_threshold" : {"white": [0,0], "green": [1,2], "yellow": [3,5], "orange": [6,13], "red": [14,null]},
+          "warning_index" : {"white": 0, "green": 1, "yellow": 2, "orange": 3, "red": 4},
+          "basin": ["Scrivia", "AvetoTrebbia"]
+        }
+      }
+    },
+    "template": {
+      "domain_name": "string_domain",
+      "run_datetime": "%Y%m%d",
+      "run_sub_path_time": "%Y/%m/%d/",
+      "source_sub_path_time": "",
+      "source_datetime": "%Y%m%d%H%M",
+      "source_datetime_from": "from_%Y%m%d%H%M",
+      "source_datetime_to": "to_%Y%m%d%H%M",
+      "ancillary_sub_path_time": "%Y/%m/%d/",
+      "ancillary_datetime": "%Y%m%d%H%M",
+      "destination_sub_path_time": "%Y/%m/%d/",
+      "destination_datetime": "%Y%m%d%H%M"
+    }
+  },
+  "data": {
+    "static" : {
+      "source": {
+        "training_matrix_center": {
+          "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_static/training_predictors/",
+          "file_name": "Xtr_centered.csv"
+        },
+        "training_matrix_max": {
+          "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_static/training_predictors/",
+          "file_name": "Xtr_max.csv"
+        },
+        "training_matrix_mean": {
+          "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_static/training_predictors/",
+          "file_name": "Xtrn_mean.csv"
+        },
+        "training_coefficient": {
+          "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_static/training_predictors/",
+          "file_name": "C_coefficients.csv"
+        }
+      },
+      "destination": {
+        "training_datasets": {
+          "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_static/training_predictors/",
+          "file_name": "training_datasets.workspace"
+        }
+      }
+    },
+    "dynamic": {
+      "info": {
+        "predictors_data": {
+          "time_period": null,
+          "time_frequency": "D",
+          "time_rounding": "D",
+          "time_start": "2018-01-01 00:00",
+          "time_end": "2019-01-01 00:00",
+          "analysis_method": "kernel"
+        }
+      },
+      "source": {
+        "predictors_data" : {
+          "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_dynamic/outcome/scenarios_datasets/{source_sub_path_time}",
+          "file_name": "scenarios_*_201912300000.csv",
+          "columns_names": [
+            "time", "sm_value_first",
+            "rain_accumulated_12H", "rain_peak_3H",
+            "event_n", "event_threshold", "event_index", "event_domain"]
+        }
+      },
+      "ancillary": {
+        "predictors_data" : {
+          "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_dynamic/ancillary/predictors/{ancillary_sub_path_time}",
+          "file_name": "predictors_{ancillary_datetime}.workspace"
+        }
+      },
+      "destination": {
+        "predictors_data" : {
+          "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_dynamic/outcome/predictors/{destination_sub_path_time}",
+          "file_name": "predictors_{destination_datetime}.csv",
+          "columns_names" : [
+            "time", "sm_value_first", "rain_accumulated_12H", "rain_peak_3H",
+            "soil_slips_observed_n", "soil_slips_observed_alert_level", "soil_slips_observed_alert_colour",
+            "soil_slips_domain_name", "day_of_the_year", "soil_slips_domain_code",
+            "soil_slips_prediction_n", "soil_slips_prediction_alert_level", "soil_slips_prediction_alert_colour"]
+        }
+      }
+    }
+  },
+  "log": {
+    "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/log/",
+    "file_name": "soil_slips_predictors_log.txt"
+  },
+  "tmp": {
+    "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/tmp/",
+    "file_name": null
+  },
+  "time": {
+    "time_now": null,
+    "time_period": 2,
+    "time_frequency": "D",
+    "time_rounding": "D",
+    "time_start": "2018-10-30 00:00",
+    "time_end": "2018-11-01 00:00"
+  }
+}
