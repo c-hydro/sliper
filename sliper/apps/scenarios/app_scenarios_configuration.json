@@ -167,6 +167,7 @@
         "prefix": "scenarios",
         "fields": {
           "time": "time",
+          "domain": "domain",
           "rain_peak_3H:max": "rain_peak_3H:max",
           "rain_accumulated_12H:max": "rain_accumulated_12H:max",
           "rain_time_run": "rain_time_run",
@@ -183,7 +184,7 @@
           "sm_latest_from": "sm_latest_from",
           "slips_n": "slips_n",
           "slips_id": "slips_id",
-          "slips_area_label": null,
+          "slips_area_label": "slips_domain",
           "slips_alert_color": "slips_alert_color",
           "slips_alert_rgb": "slips_alert_rgb",
           "slips_latest_from": null

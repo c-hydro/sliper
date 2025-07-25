@@ -10,9 +10,10 @@ Version:       '1.0.0'
 # ----------------------------------------------------------------------------------------------------------------------
 # libraries
 import logging
+import warnings
 import pandas as pd
 
-from typing import Optional, Dict, Union
+from typing import Optional, Dict, Union, List
 from copy import deepcopy
 from datetime import datetime
 
@@ -33,7 +34,10 @@ def read_file_csv(file_path: str,
                   result_format: str = 'dictionary',
                   prefix_key: Optional[str] = 'rain',
                   prefix_delimiter: Optional[str] = '_',
-                  time_col: str = 'time') -> Union[dict, pd.DataFrame]:
+                  domain_col: Optional[str] = 'domain',
+                  time_col: str = 'time', time_index: bool = False,
+                  allowed_prefix: Optional[List[str]] = None
+                  ) -> Union[dict, pd.DataFrame]:
     """
     Reads a CSV file and returns a dictionary with nested or flat structure.
 
@@ -45,13 +49,30 @@ def read_file_csv(file_path: str,
         delimiter (str): CSV delimiter.
         main_key (str, optional): If set, wraps row data under this key.
         result_format (str): 'dictionary' or 'dataframe'.
-        prefix_key (str): Prefix to use for auto-generated keys.
+        prefix_key (str): Prefix to use for auto-generated keys (when allowed_prefix is None).
         prefix_delimiter (str): Delimiter used after the prefix.
         time_col (str): Mandatory logical name for time column.
+        allowed_prefix (list[str]): If provided, disables auto-generation and checks that all keys
+                                    (except time_col) start with one of these prefixes.
 
     Returns:
         dict or pd.DataFrame: Parsed CSV content.
     """
+    # check allowed_prefix
+    if allowed_prefix is not None and not isinstance(allowed_prefix, list):
+        allowed_prefix = [allowed_prefix]
+
+    # mode validation
+    if prefix_key is None:
+        if allowed_prefix is None:
+            raise ValueError("Either prefix_key must be provided or allowed_prefix must be defined.")
+    else:
+        if allowed_prefix is not None:
+            warnings.warn(
+                "Both prefix_key and allowed_prefix are defined. "
+                "allowed_prefix will be ignored and prefix_key mode will be used."
+            )
+            allowed_prefix = None
 
     # Read CSV
     df = pd.read_csv(file_path, delimiter=delimiter, encoding=encoding or 'utf-8')
@@ -62,39 +83,71 @@ def read_file_csv(file_path: str,
     # Fields processing
     if fields is not None and fields:
         updated_fields = {}
-        has_time = False
+        has_time, has_domain = False, False
 
         for out_key, in_col in fields.items():
-            # Case 1: Placeholder colon key (e.g., ":": "amount")
-            if out_key == ":":
-                out_key = f"{prefix_key}{prefix_delimiter}{in_col}" if prefix_delimiter else f"{prefix_key}{in_col}"
+            if allowed_prefix:
+                # Auto-generation not allowed when allowed_prefix is provided
+                if out_key == ":" or out_key.startswith("{:}"):
+                    raise ValueError(
+                        "Auto-generated keys (':' or '{:}') are not allowed when allowed_prefix is set. "
+                        "Specify explicit keys instead."
+                    )
+            else:
+                # Handle auto-generation only if allowed_prefix is not set
+                if out_key == ":":
+                    out_key = f"{prefix_key}{prefix_delimiter}{in_col}" if prefix_delimiter else f"{prefix_key}{in_col}"
+                elif out_key.startswith("{:}"):
+                    suffix = out_key[4:]
+                    out_key = f"{prefix_key}{prefix_delimiter}{suffix}" if prefix_delimiter else f"{prefix_key}{suffix}"
 
-            # Case 2: Pattern like "{:}_suffix"
-            elif out_key.startswith("{:}"):
-                suffix = out_key[4:]
-                out_key = f"{prefix_key}{prefix_delimiter}{suffix}" if prefix_delimiter else f"{prefix_key}{suffix}"
-
-            # Time field exemption
+            # Validation
             if out_key == time_col:
                 has_time = True
-            elif not out_key.startswith(prefix_key) and out_key != time_col:
-                raise ValueError(f"Invalid key '{out_key}'. Must start with prefix '{prefix_key}' (except '{time_col}').")
+            elif out_key == domain_col:
+                has_domain = True
+            else:
+                if allowed_prefix:
+                    # Validate with allowed_prefix list
+                    valid_prefix = any(out_key.startswith(pfx) for pfx in allowed_prefix)
+                    if not valid_prefix:
+                        raise ValueError(
+                            f"Invalid key '{out_key}'. Must start with one of {allowed_prefix} (except '{time_col}')."
+                        )
+                else:
+                    # Original validation
+                    if not out_key.startswith(prefix_key):
+                        raise ValueError(
+                            f"Invalid key '{out_key}'. Must start with prefix '{prefix_key}' (except '{time_col}')."
+                        )
 
             updated_fields[out_key] = in_col
 
         if not has_time:
             raise ValueError(f"The mandatory time key '{time_col}' is missing in fields definition.")
+        if not has_domain:
+            raise ValueError(f"The mandatory domain key '{domain_col}' is missing in fields definition.")
 
         # Apply filtering and renaming
-        map_filter = deepcopy(updated_fields)
-        valid_input_cols = [v for v in map_filter.values() if v in df.columns]
-
+        valid_input_cols = [v for v in updated_fields.values() if v in df.columns]
         if not valid_input_cols:
             raise ValueError("None of the specified columns were found in the CSV.")
 
         tmp_df = df[valid_input_cols]
         map_rename = {v: k for k, v in updated_fields.items()}
         df = tmp_df.rename(columns=map_rename)
+
+    # set time index if required
+    if time_index:
+        if time_col not in df.columns:
+            raise ValueError(f"The mandatory time column '{time_col}' is missing in the CSV.")
+
+        # Convert time column to datetime and set as index
+        df[time_col] = pd.to_datetime(df[time_col], errors='coerce')
+        if df[time_col].isnull().any():
+            raise ValueError(f"Invalid datetime format in column '{time_col}'.")
+
+        df.set_index(time_col, inplace=True)
 
     # Format output
     if key_column is not None:
@@ -105,7 +158,7 @@ def read_file_csv(file_path: str,
             tmp[key] = {main_key: row_dict} if main_key else row_dict
 
         if result_format == 'dataframe':
-            result = pd.DataFrame(tmp)
+            result = pd.DataFrame.from_dict(tmp, orient='index')
         elif result_format == 'dictionary':
             result = deepcopy(tmp)
         else:
@@ -116,6 +169,65 @@ def read_file_csv(file_path: str,
     return result
 
 # ----------------------------------------------------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------------------------------------------------
+# method to filter file csv by time
+def filter_file_csv_by_time(
+    df: pd.DataFrame,
+    datetime_col: str,
+    start: str = None,
+    end: str = None,
+    conditions: dict = None
+) -> pd.DataFrame:
+    """
+    Load a CSV, parse datetime column, set it as index, and filter by time and conditions.
+
+    Parameters:
+    -----------
+    file_path : str
+        Path to the CSV file.
+    datetime_col : str
+        Column name that contains datetime values.
+    start : str, optional
+        Start date for filtering (inclusive).
+    end : str, optional
+        End date for filtering (inclusive).
+    conditions : dict, optional
+        Dictionary of column_name: value to filter other columns.
+
+    Returns:
+    --------
+    pd.DataFrame
+        Filtered DataFrame with DateTimeIndex.
+    """
+    # Load CSV and parse datetime
+    df = df.set_index(datetime_col)
+
+    # check if the index is already a datetime type
+    if isinstance(df.index[0], str):
+        # Convert index to datetime if it's not already
+        df.index = pd.to_datetime(df.index, errors='coerce')
+
+    # Time filtering
+    if start or end:
+        mask = pd.Series(True, index=df.index)
+        if start:
+            mask &= df.index >= pd.to_datetime(start)
+        if end:
+            mask &= df.index <= pd.to_datetime(end)
+        df = df.loc[mask]
+
+    # Apply other column conditions
+    if conditions:
+        for col, val in conditions.items():
+            if isinstance(val, (list, tuple, set)):
+                df = df[df[col].isin(val)]
+            else:
+                df = df[df[col] == val]
+
+    return df
+# ----------------------------------------------------------------------------------------------------------------------
+
 
 # ----------------------------------------------------------------------------------------------------------------------
 # method to write file csv

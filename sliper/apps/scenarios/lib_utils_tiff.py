@@ -9,18 +9,12 @@ Version:       '1.5.0'
 # ----------------------------------------------------------------------------------------------------------------------
 # libraries
 import logging
-#import os
-#import numpy as np
 import rasterio
 
-#from copy import deepcopy
-#from rasterio.crs import CRS
 from osgeo import ogr
 
 from lib_data_io_shp import convert_shp_2_tiff
-#from lib_utils_io_obj import create_darray_2d
 
-#from lib_info_args import proj_wkt as proj_default_wkt
 from lib_info_args import logger_name
 
 # Logging

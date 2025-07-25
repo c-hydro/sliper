@@ -29,7 +29,6 @@ from functools import partial
 from shapely.ops import transform
 from shapely.geometry import Point
 from shapely.vectorized import contains
-from rasterio.crs import CRS
 
 from lib_info_args import logger_name
 

@@ -38,7 +38,7 @@ import time
 import os
 
 from driver_geo import DriverGeo
-from driver_data import DriverData
+from driver_scenarios import DriverScenarios
 
 from argparse import ArgumentParser
 
@@ -118,8 +118,8 @@ def main():
     # ------------------------------------------------------------------------------------------------------------------
 
     # ------------------------------------------------------------------------------------------------------------------
-    # data driver to define indicators
-    driver_data = DriverData(
+    # driver to define indicators
+    driver_scenarios = DriverScenarios(
         time_run, time_range,
         src_dict=data_settings['data']['dynamic']['source'],
         anc_dict=data_settings['data']['dynamic']['ancillary'],
@@ -131,11 +131,11 @@ def main():
         flag_update_dst=data_settings['algorithm']['flags']['update_dynamic_destination'])
 
     # method to organize data collections
-    data_collections, time_collections = driver_data.organize_data()
+    data_collections, time_collections = driver_scenarios.organize_data()
     # method to analyze data collections
-    analysis_collections = driver_data.analyze_data(data_collections, time_collections)
+    analysis_collections = driver_scenarios.analyze_data(data_collections, time_collections)
     # method to dump data collections
-    driver_data.dump_data(analysis_collections)
+    driver_scenarios.dump_data(analysis_collections)
     # ------------------------------------------------------------------------------------------------------------------
 
     # ------------------------------------------------------------------------------------------------------------------

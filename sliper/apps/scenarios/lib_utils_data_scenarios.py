@@ -12,7 +12,6 @@ import logging
 import warnings
 import os
 import pandas as pd
-import numpy as np
 
 from typing import Optional
 from copy import deepcopy
@@ -287,6 +286,7 @@ def merge_data_by_vars(
         time_start, time_end,
         rain_df, sm_df, slips_df,
         rain_var: str = 'rain', sm_var: str = 'soil_moisture', slips_var: str = 'slips',
+        domain_var: str = 'domain', domain_label: str = 'domain',
         time_frequency: str = 'D', time_label: str = 'time') -> pd.DataFrame:
     """
     Merge rainfall, soil moisture, and landslide datasets based on a common time range.
@@ -355,6 +355,8 @@ def merge_data_by_vars(
     merged = expected_time_range.merge(df_map[rain_var], on=time_label, how='left')
     merged = merged.merge(df_map[sm_var], on=time_label, how='left')
     merged = merged.merge(df_map[slips_var], on=time_label, how='left')
+
+    merged[domain_label] = domain_var
 
     return merged
 

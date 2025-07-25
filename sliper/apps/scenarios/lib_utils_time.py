@@ -15,7 +15,7 @@ import pandas as pd
 
 from copy import deepcopy
 from datetime import date, timedelta
-from typing import Optional, Union, List, Tuple
+from typing import Optional, Union, List
 
 from lib_info_args import logger_name
 

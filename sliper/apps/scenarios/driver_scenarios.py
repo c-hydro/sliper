@@ -1,7 +1,7 @@
 """
 Class Features
 
-Name:          driver_data
+Name:          driver_scenarios
 Author(s):     Fabio Delogu (fabio.delogu@cimafoundation.org)
 Date:          '20250618'
 Version:       '1.0.0'
@@ -11,19 +11,15 @@ Version:       '1.0.0'
 # libraries
 import logging
 import os
-
-import numpy as np
 import pandas as pd
-import xarray as xr
 
 from copy import deepcopy
 
-from lib_data_io_csv import read_file_csv, write_file_csv
+from lib_data_io_csv import write_file_csv
 from lib_data_io_pickle import read_obj, write_obj
 
 from lib_utils_data_scenarios import (
-    read_data, merge_data_by_time, merge_data_by_vars, memorize_data, fill_data, analyze_data_alignment,
-    format_data, keep_unique_time_columns)
+    read_data, merge_data_by_time, merge_data_by_vars, memorize_data, fill_data, analyze_data_alignment)
 
 from lib_utils_generic import fill_template_string
 from lib_utils_generic import extract_subpart
@@ -39,8 +35,8 @@ import matplotlib.pylab as plt
 
 
 # ----------------------------------------------------------------------------------------------------------------------
-# Class DriverData
-class DriverData:
+# class DriverScenarios
+class DriverScenarios:
 
     # ------------------------------------------------------------------------------------------------------------------
     # Initialize class
@@ -266,6 +262,7 @@ class DriverData:
                     time_period_data[0], time_period_data[-1],
                     df_rain, df_sm, df_slips,
                     rain_var=self.variable_src_rain, sm_var=self.variable_src_sm, slips_var=self.variable_src_slips,
+                    domain_var=geo_key, domain_label='domain',
                     time_label='time', time_frequency='D')
 
                 # fill analysis collections (by nans)

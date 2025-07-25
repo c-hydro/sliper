@@ -10,6 +10,8 @@ Version:       '1.0.0'
 # libraries
 import logging
 import re
+import os
+import glob
 import tempfile
 import numpy as np
 import xarray as xr
@@ -52,7 +54,6 @@ def extract_subkeys(data, subkeys, invert=False, keep_keys=False):
 
     return result
 # ----------------------------------------------------------------------------------------------------------------------
-
 
 # ----------------------------------------------------------------------------------------------------------------------
 # method to get list elements
@@ -297,3 +298,41 @@ def fill_template_string(template_str: str,
         raise
 # ----------------------------------------------------------------------------------------------------------------------
 
+# ----------------------------------------------------------------------------------------------------------------------
+# method to search for a file name with optional wildcard support
+def search_file_name(file_path_in: str) -> Optional[Union[str, List[str]]]:
+    """
+    Search for a file path with optional wildcard support.
+
+    Args:
+        file_path_in (str): Path or wildcard pattern to search for.
+        logger (optional): Logger object with .warning() and .error() methods.
+
+    Returns:
+        Optional[Union[str, List[str]]]:
+            - str: Single matching file path
+            - None: No matches found
+            - Raises NotImplementedError if multiple matches are found
+    """
+    folder_name, file_name = os.path.split(file_path_in)
+
+    # Expand wildcards using glob
+    matches = glob.glob(file_path_in) if "*" in file_path_in else [file_path_in]
+
+    if len(matches) == 1:
+        return matches[0]
+
+    if len(matches) == 0:
+        if log_stream:
+            log_stream.warning(" ===> Folder location and/or template file name are/is wrong")
+            log_stream.warning(f' ===> Folder location: "{folder_name}"')
+            log_stream.warning(f' ===> File template: "{file_name}"')
+        return None
+
+    # More than one match
+    if log_stream:
+        log_stream.error(" ===> File name is expected in list format with length equal to 1")
+        log_stream.error(f' ===> Folder location: "{folder_name}"')
+        log_stream.error(f' ===> File template: "{file_name}"')
+    raise NotImplementedError("Multiple matches found. Please handle explicitly.")
+# ---------------------------------------------------------------------------------------------------------------------
