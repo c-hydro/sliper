@@ -23,11 +23,8 @@ from lib_utils_data_predictors import define_analysis_period
 from lib_utils_fx_configuration import select_fx_method, organize_fx_args
 from lib_utils_fx_data import ensure_time_index, ensure_time_doy
 
-#from lib_utils_system import fill_tags2string, make_folder
-#from lib_utils_data_point_scenarios import read_file_scenarios
-
 #from lib_data_io_csv_predictors import write_file_csv
-#from lib_analysis_predictors_alert import compute_alert_level
+from lib_utils_fx_analysis import compute_alert_info
 
 from driver_fx import DriverFx
 
@@ -61,10 +58,11 @@ class DriverPredictors:
         self.src_dict = src_dict
         self.anc_dict = anc_dict
         self.dst_dict = dst_dict
+        self.tags_dict = tags_dict
 
         self.parameters_methods = parameters_dict['methods']
-        self.parameters_analysis = parameters_dict['analysis']
-        self.tags_dict = tags_dict
+        self.parameters_anls_variables = parameters_dict['analysis']['variables']
+        self.parameters_anls_time = parameters_dict['analysis']['time']
 
         self.geo_data = geo_data
         self.training_data = training_data
@@ -116,7 +114,7 @@ class DriverPredictors:
             keep_keys=True)
 
         self.time_analysis = define_analysis_period(
-            time_reference=self.time_run, **self.parameters_analysis)
+            time_reference=self.time_run, **self.parameters_anls_time)
 
         self.fx_name, self.fx_parameters = select_fx_method(self.parameters_methods)
         self.fx_args = organize_fx_args(
@@ -127,42 +125,92 @@ class DriverPredictors:
 
     # ------------------------------------------------------------------------------------------------------------------
     # Method to dump analysis datasets
-    def dump_data(self, file_data):
+    def dump_data(self, analysis_workspace):
 
-        log_stream.info(' ----> Dump analysis [' + str(self.time_step) + '] ... ')
+        # info method start
+        log_stream.info(' ----> Dump analysis [' + str(self.time_run) + '] ... ')
 
-        file_path_dst = self.file_path_dst
+        # get time info
+        time_run = self.time_run
+        # get geo data
+        geo_data = self.geo_data
+
+        # get flags
         flag_update_dst = self.flag_update_dst
 
-        if flag_update_dst:
-            if os.path.exists(file_path_dst):
-                os.remove(file_path_dst)
+        # organize workflow to apply fx predictors
+        if analysis_workspace is not None:
 
-        log_stream.info(' ----> Save predictors datasets ... ')
-        if not os.path.exists(file_path_dst):
+            # iterate over geographical areas
+            for geo_key, geo_info in geo_data.items():
 
-            if file_data is not None:
+                # info area start
+                log_stream.info(' -----> Area "' + str(geo_key) + '" ...')
 
-                folder_name_dst, file_name_dst = os.path.split(file_path_dst)
-                os.makedirs(folder_name_dst, exist_ok=True)
+                # define destination path names
+                path_name_dst = fill_template_string(
+                    template_str=deepcopy(self.path_name_dst),
+                    template_map=self.tags_dict,
+                    value_map={'ancillary_sub_path_time_run': time_run, "ancillary_datetime_run": time_run,
+                               "ancillary_sub_path_time": time_run, "ancillary_datetime": time_run,
+                               'alert_area_name': geo_key})
 
-                write_file_csv(file_path_dst, file_data,
-                               file_tag_columns=self.file_columns_dst, file_tag_index='time')
+                # remove file if it is needed by the procedure
+                if flag_update_dst:
+                    if os.path.exists(path_name_dst):
+                        os.remove(path_name_dst)
 
-                log_stream.info(' ----> Save predictors datasets ... DONE')
-            else:
-                log_stream.info(' ----> Save predictors datasets ... SKIPPED. Datasets are undefined')
+                # info save predictors datasets start
+                log_stream.info(' ------> Save predictors datasets ... ')
+                if not os.path.exists(path_name_dst):
 
-        else:
-            log_stream.info(' ----> Save predictors datasets ... SKIPPED. Datasets are previously saved')
+                    # get analysis for the area
+                    analysis_collections = analysis_workspace[geo_key]
 
-        log_stream.info(' ----> Dump analysis [' + str(self.time_step) + '] ... DONE')
+                    # check if destination file exists
+                    if not os.path.exists(path_name_dst):
+
+                        # get analysis collections
+                        analysis_collections = analysis_workspace[geo_key]
+
+                        # check if analysis collections is not None
+                        if analysis_collections is not None:
+
+                            # save data in file object
+                            folder_name_dst, file_name_dst = os.path.split(path_name_dst)
+                            os.makedirs(folder_name_dst, exist_ok=True)
+
+                            write_file_csv(analysis_collections, filename=path_name_dst, orientation='cols')
+
+                            # info area end
+                            log_stream.info(' -----> Area "' + str(geo_key) + '" ... DONE')
+
+                        else:
+
+                            # info area end
+                            log_stream.info(' -----> Area "' + str(geo_key) + '" ... FAILED. Datasets are undefined')
+
+                    else:
+                        # info area end
+                        log_stream.info(' -----> Area "' + str(geo_key) + '" ... SKIPPED. Datasets previously created')
+
+                    # info save predictors datasets end
+                    log_stream.info(' ----> Save predictors datasets ... DONE')
+
+
+                else:
+                    # info save predictors datasets end
+                    log_stream.info(' ----> Save predictors datasets ... SKIPPED. Datasets are previously saved')
+
+        # info method end
+        log_stream.info(' ----> Dump analysis [' + str(self.time_run) + '] ... DONE')
     # ------------------------------------------------------------------------------------------------------------------
 
     # ------------------------------------------------------------------------------------------------------------------
     # method to compute analysis datasets
     def compute_data(self, datasets_workspace):
 
+        # info method start
         log_stream.info(' ----> Compute analysis [' + str(self.time_run) + '] ... ')
 
         # get time info
@@ -187,26 +235,36 @@ class DriverPredictors:
                 # get datasets for the area
                 fx_obj_datasets = datasets_workspace[geo_key]
 
+                # get ancillary thresholds and ids for the area
+                geo_obj_thresholds = self.geo_range_thresholds[geo_key]
+                geo_obj_ids = self.geo_range_id[geo_key]
+
                 # configure fx driver
                 driver_fx = DriverFx(
                     self.time_run,
                     fx_name=self.fx_name, fx_attrs=self.fx_args)
 
                 # organize fx datasets
-                fx_obj_datasets = driver_fx.organize_fx_datasets_in(fx_obj_datasets)
+                fx_obj_datasets = driver_fx.organize_fx_datasets_in(
+                    fx_obj_datasets, fx_variables_src=self.parameters_anls_variables)
                 # organize fx parameters
                 fx_obj_attributes = driver_fx.organize_fx_parameters()
 
                 # execute fx
                 fx_obj_output = driver_fx.exec_fx(fx_obj_datasets, fx_obj_attributes)
                 # organize fx analysis
-                fx_obj_datasets_out = driver_fx.organize_fx_datasets_out(fx_obj_output, fx_obj_datasets_in)
+                fx_obj_analysis = driver_fx.organize_fx_datasets_out(fx_obj_output, fx_obj_datasets)
 
-                # analyze output datasets
-                file_data_out = compute_alert_level(fx_obj_datasets_out,
-                                                    self.ancillary_dict_warn_thr, self.ancillary_dict_warn_index)
+                # add alert info to the analysis
+                file_obj_analysis = compute_alert_info(
+                    fx_obj_analysis,
+                    column_data='slips_pred_n',
+                    column_id='slips_pred_id',
+                    column_color='slips_pred_alert_color', column_rgba='slip_pred_alert_rgb',
+                    color_ids=geo_obj_ids, color_ranges=geo_obj_thresholds)
 
-                analysis_workspace[geo_key] = file_data_out
+                # save output datasets
+                analysis_workspace[geo_key] = file_obj_analysis
 
                 # info area end
                 log_stream.info(' -----> Area "' + str(geo_key) + '" ... DONE')
@@ -220,7 +278,7 @@ class DriverPredictors:
             analysis_workspace = None
             log_stream.info(' -----> Apply fx predictors ... FAILED. Datasets is NoneType')
 
-
+        # info method end (done)
         log_stream.info(' ----> Compute analysis [' + str(self.time_run) + '] ... DONE')
 
         return analysis_workspace

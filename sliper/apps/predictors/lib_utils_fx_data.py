@@ -1,7 +1,7 @@
 """
 Library Features:
 
-Name:          lib_data_io_fx_kernel
+Name:          lib_utils_fx_data
 Author(s):     Fabio Delogu (fabio.delogu@cimafoundation.org)
 Date:          '20220320'
 Version:       '1.0.0'
@@ -79,17 +79,17 @@ def ensure_time_index(df, time_col='time'):
     return df
 # ----------------------------------------------------------------------------------------------------------------------
 
-# -------------------------------------------------------------------------------------
-# Method to convert dframe to arrays
-def convert_dframe2array(fx_dframe):
+# ----------------------------------------------------------------------------------------------------------------------
+# method to convert dframe to arrays
+def convert_df2array(fx_dframe):
     fx_arrays = fx_dframe.to_numpy()
     return fx_arrays
-# -------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 
 
 # -------------------------------------------------------------------------------------
 # Method to order dataframe columns
-def order_dataframe_columns(file_dframe, file_cols_order=None, type_cols_order=None):
+def order_dataframe_columns_OLD(file_dframe, file_cols_order=None, type_cols_order=None):
 
     if file_cols_order is None:
         file_cols_order = ['event_domain']
@@ -117,7 +117,7 @@ def order_dataframe_columns(file_dframe, file_cols_order=None, type_cols_order=N
 
 # -------------------------------------------------------------------------------------
 # Method to filter dataframe columns
-def filter_dataframe_columns(file_dframe, file_cols_filter=None):
+def filter_dataframe_columns_OLD(file_dframe, file_cols_filter=None):
 
     if file_cols_filter is not None:
         if not isinstance(file_cols_filter, list):
@@ -136,7 +136,7 @@ def filter_dataframe_columns(file_dframe, file_cols_filter=None):
 
 # -------------------------------------------------------------------------------------
 # Method to fill dataframe nans
-def fill_dataframe_nan(file_dframe, column_list=None, fill_value_list=None):
+def fill_dataframe_nan_OLD(file_dframe, column_list=None, fill_value_list=None):
 
     if column_list is None:
         column_list = ['event_threshold']
@@ -154,7 +154,7 @@ def fill_dataframe_nan(file_dframe, column_list=None, fill_value_list=None):
 
 # -------------------------------------------------------------------------------------
 # Method to add dataframe columns
-def add_dataframe_columns(file_dframe,
+def add_dataframe_columns_OLD(file_dframe,
                           tag_day_of_the_year='day_of_the_year', field_day_of_the_year=True, obj_day_of_the_year=None,
                           tag_n_domain='n_domain', field_n_domain=True, obj_n_domain=None):
 
@@ -178,7 +178,7 @@ def add_dataframe_columns(file_dframe,
 
 # -------------------------------------------------------------------------------------
 # Method to drop dataframe columns
-def drop_dataframe_columns(file_dframe, file_cols_drop=None):
+def drop_dataframe_columns_OLD(file_dframe, file_cols_drop=None):
 
     if file_cols_drop is None:
         file_cols_drop = ['event_domain']

@@ -12,6 +12,9 @@ Version:       '1.0.0'
 import logging
 from copy import deepcopy
 
+from lib_utils_fx_data import convert_df2array
+from lib_utils_fx_kernel import regularizedKernLSTest
+
 from lib_info_args import logger_name
 
 # logging
@@ -98,4 +101,150 @@ def organize_fx_args(
         raise NotImplementedError('Fx not defined yet')
 
     return fx_attrs
+# ----------------------------------------------------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------------------------------------------------
+# method to organize fx kernel datasets out
+def organize_fx_kernel_datasets_out(fx_output, fx_datasets=None,
+                                    fx_name_obj='kernel_dframe',
+                                    fx_name_soil_slips_prediction='slips_pred_n'):
+    if fx_datasets is not None:
+        fx_dframe = fx_datasets[fx_name_obj]
+        fx_output = fx_output.ravel()
+        fx_output[fx_output < 0] = 0.0
+        fx_output = fx_output.astype(int)
+        fx_dframe[fx_name_soil_slips_prediction] = fx_output
+    else:
+        log_stream.error(' ===> DataFrame must be defined')
+        raise IOError('Check the datasets and the procedure')
+    return fx_dframe
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Method to configure fx kernel datasets in
+def organize_fx_kernel_datasets_in(fx_dframe,
+                                   fx_name_kernel_datasets='kernel_datasets',
+                                   fx_name_kernel_dframe='kernel_dframe',
+                                   fx_vars=None, **kwargs):
+
+    # Check if fx_attrs is provided
+    if fx_vars is None:
+        fx_vars = {
+            "var_1": "sm_value_first",
+            "var_2": "rain_accumulated_12H",
+            "var_3": "rain_peak_3H"}
+
+    # copy the original dataframe
+    fx_dframe_all = deepcopy(fx_dframe)
+
+    # Base columns that must be included
+    extra_vars = ["day_of_the_year"]
+
+    # set desired order =  fx_vars + extra_vars
+    required_vars = list(fx_vars.values()) + extra_vars
+    # check if fx_dframe has all required variables
+    missing_vars = [c for c in required_vars if c not in fx_dframe_all.columns]
+    if missing_vars:
+        raise ValueError(f"Missing variables in dataframe: {missing_vars}")
+
+    # check available columns
+    available_vars = [col for col in required_vars if col in fx_dframe_all.columns]
+    # filter dataframe to only available columns
+    fx_dframe_filter = fx_dframe_all[available_vars]
+    # sort dataframe
+    fx_dframe_order = fx_dframe_filter.sort_values(by="day_of_the_year", ascending=False).reset_index(drop=True)
+
+    # keep only numeric columns
+    fx_dframe_numeric = fx_dframe_order.select_dtypes(include=['number'])
+
+    # organize the dataframe
+    fx_dframe_numeric = fx_dframe_numeric[required_vars]
+
+    fx_obj = {fx_name_kernel_datasets: convert_df2array(fx_dframe_numeric),
+              fx_name_kernel_dframe: fx_dframe_all}
+
+    return fx_obj
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Method to organize fx kernel parameters
+def organize_fx_kernel_parameters(
+        fx_attrs,
+        fx_name_kernel_matrix_center='kernel_matrix_center',
+        fx_name_kernel_matrix_max='kernel_matrix_max',
+        fx_name_kernel_matrix_mean='kernel_matrix_mean',
+        fx_name_kernel_coefficient='kernel_coefficient',
+        fx_name_kernel_type='kernel_type', fx_name_kernel_exponent='kernel_exponent'):
+
+    if 'fx_training_matrix_center' in list(fx_attrs.keys()):
+        fx_training_matrix_center = fx_attrs['fx_training_matrix_center']
+    else:
+        log_stream.error(' ===> Attribute "fx_training_matrix_center" must be in the attributes obj')
+        raise RuntimeError('Attribute is mandatory to apply the method')
+    if 'fx_training_matrix_max' in list(fx_attrs.keys()):
+        fx_training_matrix_max = fx_attrs['fx_training_matrix_max']
+    else:
+        log_stream.error(' ===> Attribute "fx_training_matrix_max" must be in the attributes obj')
+        raise RuntimeError('Attribute is mandatory to apply the method')
+    if 'fx_training_matrix_mean' in list(fx_attrs.keys()):
+        fx_training_matrix_mean = fx_attrs['fx_training_matrix_mean']
+    else:
+        log_stream.error(' ===> Attribute "fx_training_matrix_mean" must be in the attributes obj')
+        raise RuntimeError('Attribute is mandatory to apply the method')
+
+    if 'fx_training_coefficient' in list(fx_attrs.keys()):
+        fx_training_coefficient = fx_attrs['fx_training_coefficient']
+    else:
+        log_stream.error(' ===> Attribute "fx_training_coefficient" must be in the attributes obj')
+        raise RuntimeError('Attribute is mandatory to apply the method')
+
+    if 'fx_parameters_type' in list(fx_attrs.keys()):
+        fx_parameters_type = fx_attrs['fx_parameters_type']
+    else:
+        log_stream.error(' ===> Attribute "fx_parameters_type" must be in the attributes obj')
+        raise RuntimeError('Attribute is mandatory to apply the method')
+    if 'fx_parameters_exponent' in list(fx_attrs.keys()):
+        fx_parameters_exponent = fx_attrs['fx_parameters_exponent']
+    else:
+        log_stream.error(' ===> Attribute "fx_parameters_exponent" must be in the attributes obj')
+        raise RuntimeError('Attribute is mandatory to apply the method')
+
+    fx_obj = {fx_name_kernel_matrix_center: fx_training_matrix_center,
+              fx_name_kernel_matrix_max: fx_training_matrix_max,
+              fx_name_kernel_matrix_mean: fx_training_matrix_mean,
+              fx_name_kernel_coefficient: fx_training_coefficient,
+              fx_name_kernel_type: fx_parameters_type, fx_name_kernel_exponent: fx_parameters_exponent}
+
+    return fx_obj
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Method to execute fx kernel
+def exec_fx_kernel(kernel_datasets,
+                   kernel_matrix_center=None, kernel_matrix_max=None, kernel_matrix_mean=None,
+                   kernel_coefficient=None,
+                   kernel_type='polynomial', kernel_exponent=3):
+
+    # adapt the kernel parameters to the datasets
+    # kernel_datasets_norm = center(normalize(kernel_datasets))
+    kernel_matrix_max_adapted = kernel_matrix_max[:, :kernel_datasets.shape[1]]
+    kernel_matrix_mean_adapted = kernel_matrix_mean[:, :kernel_datasets.shape[1]]# keep first 4
+    kernel_matrix_center_adapted =  kernel_matrix_center[:, :kernel_datasets.shape[1]]
+
+    # normalize and center the generated data
+    kernel_datasets_norm = kernel_datasets / kernel_matrix_max_adapted
+    # normalize and center the generated data
+    kernel_datasets_centered = kernel_datasets_norm - kernel_matrix_mean_adapted
+
+    # predict the output with the estimated model
+    kernel_predictors = regularizedKernLSTest(
+        kernel_coefficient, kernel_matrix_center_adapted, kernel_type, kernel_exponent,
+        kernel_datasets_centered)
+
+    return kernel_predictors
+
 # ----------------------------------------------------------------------------------------------------------------------

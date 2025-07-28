@@ -3,30 +3,29 @@ Class Features
 
 Name:          driver_fx
 Author(s):     Fabio Delogu (fabio.delogu@cimafoundation.org)
-Date:          '20220320'
+Date:          '20250728'
 Version:       '1.0.0'
 """
 
-######################################################################################
-# Library
+# ----------------------------------------------------------------------------------------------------------------------
+# libraries
 import logging
 import inspect
 import pandas as pd
 
 from copy import deepcopy
 
-from lib_analysis_predictors_fx_kernel import exec_fx_kernel, organize_fx_kernel_datasets_in, organize_fx_kernel_datasets_out, \
-    organize_fx_kernel_parameters
+from lib_utils_fx_configuration import (
+    exec_fx_kernel, organize_fx_kernel_datasets_in, organize_fx_kernel_datasets_out, organize_fx_kernel_parameters)
 
 from lib_info_args import logger_name
 
-# Logging
+# logging
 log_stream = logging.getLogger(logger_name)
-######################################################################################
-
+# ----------------------------------------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------------------------------------------------------------------
-# Class DriverFx configurations
+# class DriverFx
 class DriverFx:
 
     # ------------------------------------------------------------------------------------------------------------------
@@ -39,10 +38,10 @@ class DriverFx:
 
         self.fx_methods = self.map_fx_methods()
 
-    # -------------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------------------------------------------
 
-    # -------------------------------------------------------------------------------------
-    # Method to map the fx methods
+    # ------------------------------------------------------------------------------------------------------------------
+    # method to map the fx methods
     def map_fx_methods(self):
         if self.fx_name == 'fx_kernel':
             fx_methods = {'fx_exec': exec_fx_kernel,
@@ -53,35 +52,43 @@ class DriverFx:
             log_stream.error(' ===> Fx name "' + self.fx_name + '" is not expected')
             raise NotImplementedError('Fx method not implemented yet')
         return fx_methods
-    # -------------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------------------------------------------
 
-    # -------------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------------------------------------------
     # Method to organize fx datasets out
     def organize_fx_datasets_out(self, fx_array, fx_datasets, tag_fx_organize='fx_organize_datasets_out'):
         fx_method = self.fx_methods[tag_fx_organize]
         fx_datasets = fx_method(fx_array, fx_datasets=fx_datasets)
         return fx_datasets
-    # -------------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------------------------------------------
 
-    # -------------------------------------------------------------------------------------
-    # Method to configure fx datasets in
-    def organize_fx_datasets_in(self, fx_datasets_src, tag_fx_organize='fx_organize_datasets_in'):
+    # ------------------------------------------------------------------------------------------------------------------
+    # method to configure fx datasets in
+    def organize_fx_datasets_in(self, fx_datasets_src, fx_variables_src=None,
+                                tag_fx_organize='fx_organize_datasets_in'):
+
+        if fx_variables_src is None:
+            fx_variables_src = {
+                "var_1": "sm_value_first",
+                "var_2": "rain_accumulated_12H",
+                "var_3": "rain_peak_3H"}
+
         fx_method = self.fx_methods[tag_fx_organize]
         fx_attrs = deepcopy(self.fx_attrs)
-        fx_datasets_dst = deepcopy(fx_method(fx_datasets_src, fx_attrs=fx_attrs))
+        fx_datasets_dst = deepcopy(fx_method(fx_datasets_src, fx_attrs=fx_attrs, fx_vars=fx_variables_src))
         return fx_datasets_dst
-    # -------------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------------------------------------------
 
-    # -------------------------------------------------------------------------------------
-    # Method to organize fx parameters
+    # ------------------------------------------------------------------------------------------------------------------
+    # method to organize fx parameters
     def organize_fx_parameters(self, tag_fx_organize='fx_organize_parameters'):
         fx_method = self.fx_methods[tag_fx_organize]
         fx_attrs = fx_method(self.fx_attrs)
         return fx_attrs
-    # -------------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------------------------------------------
 
-    # -------------------------------------------------------------------------------------
-    # Method to fill fx args included in fx signature
+    # ------------------------------------------------------------------------------------------------------------------
+    # method to fill fx args included in fx signature
     @staticmethod
     def fill_fx_args(fx_signature, fx_data, fx_sep=','):
 
@@ -111,10 +118,10 @@ class DriverFx:
 
         return fx_data
 
-    # -------------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------------------------------------------
 
-    # -------------------------------------------------------------------------------------
-    # Method to remove fx args not included in fx signature
+    # ------------------------------------------------------------------------------------------------------------------
+    # method to remove fx args not included in fx signature
     @staticmethod
     def pop_fx_args(fx_signature, fx_data):
 
@@ -124,17 +131,17 @@ class DriverFx:
                 fx_data.pop(fx_key_tmp, None)
 
         return fx_data
-    # -------------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------------------------------------------
 
-    # -------------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------------------------------------------
     # Method to inspect fx
     @staticmethod
     def get_fx_signature(fx_method):
         fx_signature = inspect.signature(fx_method)
         return fx_signature
-    # -------------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------------------------------------------
 
-    # -------------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------------------------------------------
     # Method to exec fx
     def exec_fx(self, fx_datasets, fx_attrs, tag_fx_exec='fx_exec'):
 
@@ -150,6 +157,6 @@ class DriverFx:
         fx_outcome_collections = fx_method(**fx_data_collections)
 
         return fx_outcome_collections
-    # -------------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------------------------------------------
 
-# -------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
