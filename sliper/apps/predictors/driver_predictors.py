@@ -19,11 +19,10 @@ from copy import deepcopy
 from lib_data_io_csv import read_file_csv, filter_file_csv_by_time, write_file_csv
 from lib_data_io_pickle import read_obj, write_obj
 
-from lib_utils_data_predictors import define_analysis_period
+from lib_utils_data_predictors import define_analysis_period, remap_data
 from lib_utils_fx_configuration import select_fx_method, organize_fx_args
 from lib_utils_fx_data import ensure_time_index, ensure_time_doy
 
-#from lib_data_io_csv_predictors import write_file_csv
 from lib_utils_fx_analysis import compute_alert_info
 
 from driver_fx import DriverFx
@@ -151,8 +150,8 @@ class DriverPredictors:
                 path_name_dst = fill_template_string(
                     template_str=deepcopy(self.path_name_dst),
                     template_map=self.tags_dict,
-                    value_map={'ancillary_sub_path_time_run': time_run, "ancillary_datetime_run": time_run,
-                               "ancillary_sub_path_time": time_run, "ancillary_datetime": time_run,
+                    value_map={'destination_sub_path_time_run': time_run, "destination_datetime_run": time_run,
+                               "destination_sub_path_time": time_run, "destination_datetime": time_run,
                                'alert_area_name': geo_key})
 
                 # remove file if it is needed by the procedure
@@ -164,14 +163,13 @@ class DriverPredictors:
                 log_stream.info(' ------> Save predictors datasets ... ')
                 if not os.path.exists(path_name_dst):
 
-                    # get analysis for the area
-                    analysis_collections = analysis_workspace[geo_key]
-
                     # check if destination file exists
                     if not os.path.exists(path_name_dst):
 
                         # get analysis collections
                         analysis_collections = analysis_workspace[geo_key]
+                        # rename analysis collections
+                        analysis_collections = remap_data(analysis_collections, rename_map=self.fields_dst)
 
                         # check if analysis collections is not None
                         if analysis_collections is not None:
@@ -180,13 +178,13 @@ class DriverPredictors:
                             folder_name_dst, file_name_dst = os.path.split(path_name_dst)
                             os.makedirs(folder_name_dst, exist_ok=True)
 
-                            write_file_csv(analysis_collections, filename=path_name_dst, orientation='cols')
+                            write_file_csv(analysis_collections,
+                                           filename=path_name_dst, orientation='cols', float_format='%.2f')
 
                             # info area end
                             log_stream.info(' -----> Area "' + str(geo_key) + '" ... DONE')
 
                         else:
-
                             # info area end
                             log_stream.info(' -----> Area "' + str(geo_key) + '" ... FAILED. Datasets are undefined')
 
@@ -196,7 +194,6 @@ class DriverPredictors:
 
                     # info save predictors datasets end
                     log_stream.info(' ----> Save predictors datasets ... DONE')
-
 
                 else:
                     # info save predictors datasets end
@@ -327,8 +324,8 @@ class DriverPredictors:
             path_name_dst = fill_template_string(
                 template_str=deepcopy(self.path_name_dst),
                 template_map=self.tags_dict,
-                value_map={'ancillary_sub_path_time_run': time_run, "ancillary_datetime_run": time_run,
-                           "ancillary_sub_path_time": time_run, "ancillary_datetime": time_run,
+                value_map={'destination_sub_path_time_run': time_run, "destination_datetime_run": time_run,
+                           "destination_sub_path_time": time_run, "destination_datetime": time_run,
                            'alert_area_name': geo_key})
 
             # remove file if it is needed by the procedure

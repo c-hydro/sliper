@@ -173,7 +173,8 @@ class DriverScenarios:
                 folder_name_dst, file_name_dst = os.path.split(path_name_dst)
                 os.makedirs(folder_name_dst, exist_ok=True)
 
-                write_file_csv(analysis_collections, filename=path_name_dst, orientation='cols')
+                write_file_csv(analysis_collections,
+                               filename=path_name_dst, orientation='cols', float_format='%.3f')
 
                 # info area end
                 log_stream.info(' -----> Area "' + str(geo_key) + '" ... DONE')
