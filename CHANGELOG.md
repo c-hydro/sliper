@@ -4,7 +4,7 @@ All notable changes to this project are documented in this file.
 
 ---
 
-## [3.0.0] – 2025-07-18
+## [3.0.0] – 2025-07-30
 ### Added
 - Unified SLIPER runner integrating previous tools under a single modular framework
 - Workspace-based I/O structure (data_static, data_dynamic, tmp, log)
