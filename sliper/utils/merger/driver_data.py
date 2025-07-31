@@ -85,83 +85,56 @@ class DriverData:
 
     # ------------------------------------------------------------------------------------------------------------------
     # Method to dump analysis datasets
-    def dump_data(self, analysis_workspace):
+    def dump_data(self, datasets_workspace):
 
         # info method start
-        log_stream.info(' ----> Dump analysis [' + str(self.time_run) + '] ... ')
+        log_stream.info(' ----> Dump dynamic data [' + str(self.time_run) + '] ... ')
 
         # get time info
         time_run = self.time_run
-        # get geo data
-        geo_data = self.geo_data
-
         # get flags
         flag_update_dst = self.flag_update_dst
 
         # organize workflow to apply fx predictors
-        if analysis_workspace is not None:
+        if datasets_workspace is not None:
 
-            # iterate over geographical areas
-            for geo_key, geo_info in geo_data.items():
+            # define destination path names
+            path_name_dst = fill_template_string(
+                template_str=deepcopy(self.path_name_dst),
+                template_map=self.tags_dict,
+                value_map={'destination_sub_path_time_run': time_run, "destination_datetime_run": time_run,
+                           "destination_sub_path_time": time_run, "destination_datetime": time_run})
 
-                # info area start
-                log_stream.info(' -----> Area "' + str(geo_key) + '" ...')
+            # remove file if it is needed by the procedure
+            if flag_update_dst:
+                if os.path.exists(path_name_dst):
+                    os.remove(path_name_dst)
 
-                # define destination path names
-                path_name_dst = fill_template_string(
-                    template_str=deepcopy(self.path_name_dst),
-                    template_map=self.tags_dict,
-                    value_map={'destination_sub_path_time_run': time_run, "destination_datetime_run": time_run,
-                               "destination_sub_path_time": time_run, "destination_datetime": time_run,
-                               'alert_area_name': geo_key})
+            # check if destination file exists
+            if not os.path.exists(path_name_dst):
 
-                # remove file if it is needed by the procedure
-                if flag_update_dst:
-                    if os.path.exists(path_name_dst):
-                        os.remove(path_name_dst)
+                # check datasets workspace defined or not
+                if datasets_workspace is not None:
 
-                # info save predictors datasets start
-                log_stream.info(' ------> Save predictors datasets ... ')
-                if not os.path.exists(path_name_dst):
+                    # save data in file object
+                    folder_name_dst, file_name_dst = os.path.split(path_name_dst)
+                    os.makedirs(folder_name_dst, exist_ok=True)
 
-                    # check if destination file exists
-                    if not os.path.exists(path_name_dst):
+                    write_file_csv(datasets_workspace,
+                                   filename=path_name_dst, orientation='cols', float_format='%.2f')
 
-                        # get analysis collections
-                        analysis_collections = analysis_workspace[geo_key]
-                        # rename analysis collections
-                        analysis_collections = remap_data(analysis_collections, rename_map=self.fields_dst)
-
-                        # check if analysis collections is not None
-                        if analysis_collections is not None:
-
-                            # save data in file object
-                            folder_name_dst, file_name_dst = os.path.split(path_name_dst)
-                            os.makedirs(folder_name_dst, exist_ok=True)
-
-                            write_file_csv(analysis_collections,
-                                           filename=path_name_dst, orientation='cols', float_format='%.2f')
-
-                            # info area end
-                            log_stream.info(' -----> Area "' + str(geo_key) + '" ... DONE')
-
-                        else:
-                            # info area end
-                            log_stream.info(' -----> Area "' + str(geo_key) + '" ... FAILED. Datasets are undefined')
-
-                    else:
-                        # info area end
-                        log_stream.info(' -----> Area "' + str(geo_key) + '" ... SKIPPED. Datasets previously created')
-
-                    # info save predictors datasets end
-                    log_stream.info(' ----> Save predictors datasets ... DONE')
-
+                    # info method end
+                    log_stream.info(' ----> Dump dynamic data [' + str(self.time_run) + '] ... DONE')
                 else:
-                    # info save predictors datasets end
-                    log_stream.info(' ----> Save predictors datasets ... SKIPPED. Datasets are previously saved')
+                    # info method end
+                    log_stream.info(' ----> Dump dynamic data [' +
+                                    str(self.time_run) + '] ... FAILED. Datasets are defined by NoneType')
+            else:
+                # info method end
+                log_stream.info(
+                    ' ----> Dump dynamic data [' +
+                    str(self.time_run) + '] ... SKIPPED. Datasets are previously saved')
 
-        # info method end
-        log_stream.info(' ----> Dump analysis [' + str(self.time_run) + '] ... DONE')
     # ------------------------------------------------------------------------------------------------------------------
 
     # ------------------------------------------------------------------------------------------------------------------
@@ -210,7 +183,7 @@ class DriverData:
             log_stream.info(' -----> Collect datasets ... ')
 
             # iterate over groups
-            df_common = None
+            datasets_workspace = None
             for geo_key, geo_info in geo_data.items():
 
                 # info domain start
@@ -228,33 +201,39 @@ class DriverData:
                 if os.path.exists(path_name_src):
 
                     # read data from source file
-                    df_raw = read_file_csv(
+                    datasets_raw = read_file_csv(
                         path_name_src, delimiter=self.delimiter_src, fields=None,
                         time_col='time', time_index=True,
-                        allowed_prefix=None, prefix_key=None, result_format='dataframe')
+                        allowed_prefix=None, prefix_key=None, prefix_mandatory=False,
+                        result_format='dataframe')
 
                     # info domain end (done)
                     log_stream.info(' -----> Area "' + str(geo_key) + '" ... DONE')
 
                 else:
                     # info data collection end (failed)
-                    df_raw = None
+                    datasets_raw = None
                     # info domain end (done)
                     log_stream.info(' -----> Area "' + str(geo_key) + '" ... FAILED. Source file not found: ' + path_name_src)
 
                 # save data in workspace
-                df_common = merge_data(df_common, df_raw)
+                datasets_workspace = merge_data(datasets_workspace, datasets_raw, ignore_index=False)
 
             # info collect data end
             log_stream.info(' -----> Collect datasets ... DONE')
 
-            # info merge data start
-            log_stream.info(' -----> Merge datasets ... ')
+            # info save data start
+            log_stream.info(' -----> Save datasets ... ')
 
+            # save data in workspace object
+            folder_name_anc, file_name_anc = os.path.split(path_name_anc)
+            os.makedirs(folder_name_anc, exist_ok=True)
 
+            write_obj(path_name_anc, datasets_workspace)
 
-            # info merge data end
-            log_stream.info(' -----> Merge datasets ... DONE')
+            # info save data end
+            log_stream.info(' -----> Save datasets ... DONE')
+
         else:
 
             # read datasets from file

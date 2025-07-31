@@ -33,7 +33,7 @@ def read_file_csv(file_path: str,
                   main_key: Optional[str] = None,
                   result_format: str = 'dictionary',
                   prefix_key: Optional[str] = 'rain',
-                  prefix_delimiter: Optional[str] = '_',
+                  prefix_delimiter: Optional[str] = '_', prefix_mandatory: bool = True,
                   domain_col: Optional[str] = 'domain',
                   time_col: str = 'time', time_index: bool = False,
                   allowed_prefix: Optional[List[str]] = None
@@ -64,8 +64,9 @@ def read_file_csv(file_path: str,
 
     # mode validation
     if prefix_key is None:
-        if allowed_prefix is None:
-            raise ValueError("Either prefix_key must be provided or allowed_prefix must be defined.")
+        if prefix_mandatory:
+            if allowed_prefix is None:
+                raise ValueError("Either prefix_key must be provided or allowed_prefix must be defined.")
     else:
         if allowed_prefix is not None:
             warnings.warn(
@@ -74,7 +75,7 @@ def read_file_csv(file_path: str,
             )
             allowed_prefix = None
 
-    # Read CSV
+    # read csv
     df = pd.read_csv(file_path, delimiter=delimiter, encoding=encoding or 'utf-8')
 
     if key_column and key_column not in df.columns:

@@ -114,10 +114,8 @@ def main():
     )
     # method to organize data collections
     data_collections = driver_data.organize_data()
-    # method to analyze data collections
-    analysis_datasets = driver_data.compute_data(data_collections)
     # method to dump data collections
-    driver_data.dump_data(analysis_datasets)
+    driver_data.dump_data(data_collections)
     # -------------------------------------------------------------------------------------
 
     # -------------------------------------------------------------------------------------

@@ -23,7 +23,7 @@ log_stream = logging.getLogger(logger_name)
 
 # ----------------------------------------------------------------------------------------------------------------------
 # method to merge two dataframes with column checks
-def merge_data(df1, df2):
+def merge_data(df1, df2, ignore_index=True):
     """
     Merges two dataframes along rows (vertically), checking if either of the dataframes
     is None and ensuring that columns match before merging.
@@ -37,24 +37,22 @@ def merge_data(df1, df2):
     """
     # Handle cases where one of the dataframes is None
     if df1 is None and df2 is None:
-        print("Both dataframes are None. Returning None.")
+        log_stream.warning(" ===> Both dataframes are None. Returning None.")
         return None
     elif df1 is None:
-        print("df1 is None. Returning df2.")
         return df2
     elif df2 is None:
-        print("df2 is None. Returning df1.")
         return df1
 
     # Check if both dataframes have the same columns
     if not all(df1.columns == df2.columns):
-        print(f"Warning: The columns of df1 and df2 do not match.")
-        print(f"df1 columns: {df1.columns}")
-        print(f"df2 columns: {df2.columns}")
+        log_stream.warning(f" ===> Warning: The columns of df1 and df2 do not match.")
+        log_stream.warning(f" ===> df1 columns: {df1.columns}")
+        log_stream.warning(f" ===> df2 columns: {df2.columns}")
         return None  # Or choose to handle it differently, e.g., raise an exception.
 
     # If columns match, concatenate the dataframes along rows
-    merged_df = pd.concat([df1, df2], axis=0, ignore_index=True)
+    merged_df = pd.concat([df1, df2], axis=0, ignore_index=ignore_index)
 
     return merged_df
 # ----------------------------------------------------------------------------------------------------------------------

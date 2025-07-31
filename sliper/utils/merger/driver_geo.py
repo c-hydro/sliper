@@ -80,7 +80,8 @@ class DriverGeo:
                     # read csv file
                     tmp_obj = read_file_csv(
                         self.path_name_src,
-                        key_column='name', delimiter=',')
+                        key_column='name', delimiter=',',
+                        prefix_key=None, allowed_prefix=None, prefix_mandatory=False)
                     # translate object to the correct format
                     geo_obj = translate_geo_object(tmp_obj, id_range=None, rgb_range=None)
 

@@ -50,12 +50,12 @@
         "delimiter": ";"
       },
       "ancillary": {
-        "folder_name": "/home/fabio/Desktop/Workspace/sliper/ws/data_dynamic/destination/predictors/{destination_sub_path_time}",
-        "file_name": "predictors_merged_{destination_datetime}.workspace"
+        "folder_name": "/home/fabio/Desktop/Workspace/sliper/ws/data_dynamic/destination/predictors/{ancillary_sub_path_time}",
+        "file_name": "predictors_{ancillary_datetime}_liguria.workspace"
       },
       "destination": {
         "folder_name": "/home/fabio/Desktop/Workspace/sliper/ws/data_dynamic/destination/predictors/{destination_sub_path_time}",
-        "file_name": "predictors_merged_{destination_datetime}.csv",
+        "file_name": "predictors_{destination_datetime}_liguria.csv",
         "type": "vector",
         "format": "csv",
         "delimiter": ";"
@@ -72,11 +72,11 @@
   },
   "time": {
     "time_now": null,
-    "time_period": 2,
+    "time_period": 1,
     "time_frequency": "D",
     "time_rounding": "D",
-    "time_start": "2023-01-12 00:00",
-    "time_end": "2023-01-12 00:00"
+    "time_start": null,
+    "time_end": null
   }
 }
 
