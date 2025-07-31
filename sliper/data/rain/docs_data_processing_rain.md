@@ -81,14 +81,14 @@ Example:
 
 ### Command
 ```bash
-python app_data_processing_rain_main.py \
+python sliper_app_data_processing_rain_main.py \
   -settings_file configuration.json \
   -time "YYYY-MM-DD HH:MM"
 ```
 
 ### Example
 ```bash
-python app_data_processing_rain_main.py \
+python sliper_app_data_processing_rain_main.py \
   -settings_file configuration.json \
   -time "2025-06-18 00:00"
 ```

@@ -2,7 +2,7 @@
 
 #-----------------------------------------------------------------------------------------
 # Script information
-script_name='ARPAL - SOIL SLIPS PREDICTORS - RUNNER - REALTIME'
+script_name='SLIPER TOOLS - PREDICTORS RUNNER - REALTIME'
 script_version="1.2.0"
 script_date='2022/10/13'
 

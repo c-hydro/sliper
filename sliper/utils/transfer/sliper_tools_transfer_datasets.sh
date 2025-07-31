@@ -2,7 +2,7 @@
 
 #-----------------------------------------------------------------------------------------
 # Script information
-script_name='HYDE TOOLS - TRANSFER DATASETS BY FTP - REALTIME'
+script_name='SLIPER TOOLS - TRANSFER DATASETS - REALTIME'
 script_version="1.0.0"
 script_date='2021/11/18'
 

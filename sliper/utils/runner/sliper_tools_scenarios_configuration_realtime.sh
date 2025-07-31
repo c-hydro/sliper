@@ -2,7 +2,7 @@
 
 #-----------------------------------------------------------------------------------------
 # Script information
-script_name='ARPAL - SOIL SLIPS SCENARIOS - RUNNER - REALTIME'
+script_name='SLIPER TOOLS - SCENARIOS RUNNER - REALTIME'
 script_version="1.3.0"
 script_date='2023/01/19'
 
@@ -11,7 +11,7 @@ flag_execution=true
 
 # Script Info
 script_folder='/home/admin/library/package_soilslips/'
-script_file_main='/home/admin/library/package_soilslips/app_indicators_rain_main.py'
+script_file_main='/home/admin/library/package_soilslips/sliper_app_indicators_rain_main.py'
 script_file_settings_type_domain='/home/admin/soilslips-exec/arpal_soil_slips_scenarios_configuration_realtime_domain.json'
 script_file_settings_type_alert_area='/home/admin/soilslips-exec/arpal_soil_slips_scenarios_configuration_realtime_alert_area.json'
 

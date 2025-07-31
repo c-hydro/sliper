@@ -1,14 +1,14 @@
 #!/usr/bin/python3
 """
-HYDE POSTPROCESSING TOOLS - FTP file transfer
+SLIPER TOOLS - FILE TRANSFER - Soil Landslide Information and Prediction & Early Response
 
 __date__ = '20211118'
 __version__ = '1.0.0'
 __author__ = 'Fabio Delogu (fabio.delogu@cimafoundation.org'
-__library__ = 'HAT'
+__library__ = 'sliper'
 
 General command line:
-python3 arpal_tools_transfer_datasets_ftp.py -settings_file configuration.json -time "YYYY-mm-dd HH:MM"
+python sliper_tools_transfer_datasets.py -settings_file configuration.json -time "YYYY-mm-dd HH:MM"
 """
 
 # -------------------------------------------------------------------------------------
@@ -48,9 +48,9 @@ time_format_algorithm = '%y-%m-%d %H:%M'
 
 # -------------------------------------------------------------------------------------
 # Algorithm information
-project_name = 'HAT'
-alg_name = 'FTP File Transfer'
-alg_type = 'HMC TimeSeries'
+project_name = 'sliper'
+alg_name = 'SLIPER TOOLS - FILE TRANSFER'
+alg_type = 'Package'
 alg_version = '1.0.0'
 alg_release = '2021-11-18'
 # -------------------------------------------------------------------------------------

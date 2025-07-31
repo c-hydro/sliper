@@ -5,12 +5,13 @@ ARPAL Viewer Tool - SOIL SLIPS PREDICTORS TIME-SERIES VIEWER
 __date__ = '20240112'
 __version__ = '1.0.0'
 __author__ = 'Fabio Delogu (fabio.delogu@cimafoundation.org'
-__library__ = 'recolour'
+__library__ = 'sliper'
 
 General command line:
-python arpal_soil_slips_viewer.py -settings_file configuration.json -time "YYYY-MM-DD HH:MM"
+python sliper_app_viewer_main.py -settings_file configuration.json -time "YYYY-MM-DD HH:MM"
 
 Version(s):
+20250731 (1.5.0) --> Refactor to the sliper package
 20240117 (1.0.0) --> Beta release
 """
 
@@ -36,7 +37,7 @@ log_stream = logging.getLogger(logger_name)
 
 # -------------------------------------------------------------------------------------
 # algorithm information
-project_name = 'arpal'
+project_name = 'sliper'
 alg_name = 'SOIL SLIPS VIEWER TOOL'
 alg_type = 'Package'
 alg_version = '1.0.0'

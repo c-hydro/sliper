@@ -4,8 +4,8 @@
       "title": "Viewing tool for soil slips time-series",
       "web-site": "",
       "source": "Python library developed by CIMA Research Foundation",
-      "history": "1.0.0 [20240116]",
-      "project-info": "recolour",
+      "history": "1.5.0 [20250731]",
+      "project-info": "sliper",
       "algorithm": "Algorithm developed by CIMA Research Foundation"
     },
     "flags": {
@@ -67,19 +67,31 @@
   },
   "data": {
     "static": {
-      "source": {
-        "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_static/alert_area/",
-        "file_name": "alert_area_epsg4326.shp"
-      },
-      "destination": {
-        "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_static/alert_area/",
-        "file_name": "alert_area_epsg4326.workspace"
+        "source": {
+          "info": {
+            "folder_name": "/home/fabio/Desktop/sliper/ws/data_static/alert_area/",
+            "file_name": "alert_area_info.csv",
+            "type": "vector",
+            "format": "csv"
+          },
+          "shapefile": {
+            "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_static/alert_area/",
+            "file_name": "alert_area_epsg4326.shp",
+            "type": "vector",
+            "format": "shapefile"
+          }
+        }
+        "destination": {
+          "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_static/viewer/",
+          "file_name": "geo_info_viewer.workspace",
+          "type": "vector",
+          "format": "workspace"
       }
     },
     "dynamic": {
       "source": {
-        "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_dynamic/outcome/predictors/{source_sub_path_time}",
-        "file_name": "predictors_{source_datetime}.csv",
+        "folder_name": "/home/fabio/Desktop/sliper/ws/data_dynamic/destination/predictors/{source_sub_path_time}",
+        "file_name": "predictors_{source_datetime}_liguria.csv",
         "format": "csv",
         "fields": {
           "soil_moisture": "sm_value_first",
@@ -92,17 +104,17 @@
           "soil_slips_domain_name": "soil_slips_domain_name",
           "time": "time"
         },
-        "time_period": 30,
+        "time_period": 7,
         "time_frequency": "D",
         "time_rounding": "D",
         "value_no_data": -9999.0
       },
       "ancillary": {
-        "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_dynamic/ancillary/predictors/{ancillary_sub_path_time}",
-        "file_name": "predictors_{ancillary_datetime}.workspace"
+        "folder_name": "/home/fabio/Desktop/sliper/ws/data_dynamic/ancillary/plots/{ancillary_sub_path_time}",
+        "file_name": "predictors_{ancillary_datetime}_viewer.workspace"
       },
       "destination": {
-        "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/data_dynamic/destination/plots/{destination_sub_path_time}",
+        "folder_name": "/home/fabio/Desktop/sliper/ws/data_dynamic/destination/plots/{destination_sub_path_time}",
         "file_name": "predictors_{destination_datetime}_{registry_name}.jpeg",
         "format": "jpeg",
         "fields": {
@@ -142,16 +154,16 @@
     }
   },
   "tmp": {
-    "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/tmp/",
+    "folder_name": "/home/fabio/Desktop/Workspace/sliper/ws/tmp/",
     "file_name": null
   },
   "log": {
-    "folder_name": "/home/fabio/Desktop/PyCharm_ARPAL/soilslips-ws/log/",
-    "file_name": "soil_slips_predictors_viewer_log.txt"
+    "folder_name": "/home/fabio/Desktop/Workspace/sliper/ws/log/",
+    "file_name": "sliper_viewer_log.txt"
   },
   "time": {
     "time_reference": null,
-    "time_period": 3,
+    "time_period": 1,
     "time_frequency": "D",
     "time_rounding": "D",
     "time_start": null,

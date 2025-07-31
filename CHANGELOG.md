@@ -12,8 +12,10 @@ All notable changes to this project are documented in this file.
 - Structured logging and error tracking mechanisms
 - Add applications to process rain, soil moisture and soil slips datasets
 - Add applications to define rain and soil moisture indicators
+- Add applications to define scenarios
 - Add applications to define predictors
-- Add utils and tools to manage datasets and view results
+- Add applications to view scenarios/predictors results
+- Add utils and tools to manage datasets
 
 ### Changed
 - Refactored runner logic for maintainability and consistency

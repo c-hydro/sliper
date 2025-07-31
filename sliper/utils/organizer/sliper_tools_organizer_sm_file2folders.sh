@@ -2,7 +2,7 @@
 
 # ----------------------------------------------------------------------------------------
 # Script information
-script_name='SLIPER TOOLS - HMC FILE ORGANIZER'
+script_name='SLIPER TOOLS - FILE ORGANIZER'
 script_version="2.2.0"
 script_date='2025/07/21'
 # ----------------------------------------------------------------------------------------
