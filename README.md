@@ -1,135 +1,125 @@
+Saved as README.md
+
 # SLIPER Toolkit
 
-**SLIPER** (Soil Moisture and Land Surface Interactions for Prediction and Evaluation of Rainfall) is a Python-based framework for analyzing and evaluating hydrometeorological datasets, with a focus on rainfall estimation, soil moisture interactions, and remote sensing product validation.
+---
+
+## ✨ Overview
+SLIPER (Soil Landslide Information and Prediction & Early Response) is a Python framework for analyzing and validating soil moisture, rainfall, and related datasets. It provides workflows for data ingestion, transformation, indicators, predictors, scenario building, and visualization.
 
 ---
 
-## 📦 Version
+## 🔍 Features
+- **Data Processing:** Tools for rain, soil moisture, and landslide datasets
+- **Indicators:** Generate rainfall and soil moisture indicators
+- **Predictors:** Prepare and train predictors
+- **Scenarios:** Construct and analyze simulation scenarios
+- **Visualization:** Plotting and reporting utilities
+- **Utilities:** Merge, organize, transfer data, and execute workflows
 
-**Current version: 3.0.0**  
-This release integrates and improves upon previous algorithms, with a focus on unified structure, optimized performance, and enhanced modularity.
-
-Key updates in 3.0.0:
-- Consolidated legacy components from 2.x releases
-- Enhanced configuration management with dynamic YAML handling
-- Refactored runner logic for improved maintainability
-- Structured logging and result tracking
-- Smoother conda-based deployment with a self-contained environment
+All components are modular and configurable using YAML/JSON.
 
 ---
 
-## 📁 Project Structure
+## 📦 Main Components
 
-```plaintext
+### Applications (`sliper/apps/`)
+- **indicators/** – Rain and soil moisture indicators
+- **predictors/** – Predictor creation and training
+- **scenarios/** – Scenario configuration and execution
+
+### Data Modules (`sliper/data/`)
+- **rain/** – Rainfall datasets
+- **slips/** – Landslide/slip data
+- **sm/** – Soil moisture data
+
+### Visualization (`sliper/plots/`)
+- Plotting, geospatial visualization, and summary graphics
+
+### Utilities (`sliper/utils/`)
+- **merger/** – Merge datasets
+- **organizer/** – Organize soil moisture files
+- **runner/** – Real-time configuration scripts
+- **transfer/** – Transfer datasets (FTP, rsync)
+
+---
+
+## 📂 Structure
+```
 .
-├── sliper/                   # Main source code
-│   ├── apps/                # Runner scripts and applications
-│   ├── data/                # Data handling modules
-│   └── utils/               # Utility functions and tools
-├── conda/                   # Self-contained conda environment
-│   └── sliper_runner_data_settings/  # Workflow configuration files
-├── ws/                      # Runtime workspace
-│   ├── data_dynamic/        # Dynamic data (e.g. rainfall, model output)
-│   ├── data_static/         # Static data (e.g. terrain, masks)
-│   ├── log/                 # Logging directory
-│   └── tmp/                 # Temporary processing files
-├── docs/                    # Supplementary documentation
-├── example/                 # (To be populated) example config/data
-├── test/                    # Unit and integration tests
-├── old/                     # Legacy code (e.g., soilslips-dev)
-├── scripts                  # Setup scripts (e.g. miniconda.sh)
-├── README.md                # Project readme (this file)
-├── LICENSE.md               # License information
-└── *.sh                     # Environment setup scripts
+├── sliper/
+│   ├── apps/
+│   ├── data/
+│   ├── plots/
+│   └── utils/
+├── conda/
+│   └── sliper_runner_data_settings/
+├── ws/
+│   ├── data_dynamic/
+│   ├── data_static/
+│   ├── log/
+│   └── tmp/
+├── README.md
+├── CHANGELOG.md
+├── LICENSE.md
+├── AUTHORS.md
+├── CODEOWNERS.md
+└── setup_sliper_system_conda_runner_data.sh
 ```
 
 ---
 
 ## 🚀 Quick Start
 
-### 1. Clone the Repository
-
+### 1. Clone
 ```bash
 git clone https://github.com/c-hydro/sliper.git
 cd sliper
 ```
 
-### 2. Set Up Environment
-
-Run the provided setup script (which uses the embedded Miniconda environment):
-
+### 2. Setup Environment
 ```bash
+conda create -n sliper_env python=3.10
+conda activate sliper_env
 bash setup_sliper_system_conda_runner_data.sh
 ```
 
-> 📝 Alternatively, use `miniconda.sh` to install Miniconda manually if needed.
-
-### 3. Configure Settings
-
-Edit a YAML file from:
-
+### 3. Configure
+Edit YAML configuration files in:
 ```
 conda/sliper_runner_data_settings/
 ```
 
-These files define the workflow settings (e.g., input/output paths, models, time ranges).
-
-### 4. Run an Application
-
+### 4. Run
 ```bash
-python sliper/apps/sliper_runner.py -settings_file conda/sliper_runner_data_settings/<your_config>.yml
+python sliper/apps/sliper_runner.py -settings_file conda/sliper_runner_data_settings/your_config.yml
 ```
-
-Output will be written to the `ws/` directory.
-
----
-
-## ⚙️ Core Features
-
-- **Flexible configuration** via YAML files
-- **Support for multiple data formats** (NetCDF, GeoTIFF, HDF5)
-- **Satellite precipitation product evaluation**
-- **Statistical metrics:** RMSE, correlation, bias, etc.
-- **Modular structure** for easy customization
-- **Full backward compatibility** with legacy algorithms (v2.x series)
+Outputs (logs, results, intermediate files) will be generated in the `ws/` directory.
 
 ---
 
-## 🧪 Testing
+## ▶ Runner Script Examples
+The `sliper/utils/runner/` folder includes ready-made scripts:
 
-Tests are located in the `test/` directory and can be run using `pytest`:
-
+**Predictors:**
 ```bash
-pytest test/
+bash sliper/utils/runner/sliper_tools_predictors_configuration_realtime.sh
 ```
+**Scenarios:**
+```bash
+bash sliper/utils/runner/sliper_tools_scenarios_configuration_realtime.sh
+```
+Scripts can be customized to adjust paths, configuration, and runtime options.
 
 ---
 
-## 📄 Documentation
-
-Basic structure and usage notes are in `docs/`. A future update will include full documentation with function references and tutorials.
-
----
-
-## 👤 Authors & Contributors
-
-See [`AUTHORS.md`](./AUTHORS.md) for full credits.
+## 📚 Documentation and References
+- [CHANGELOG.md](CHANGELOG.md): Updates and version history
+- [AUTHORS.md](AUTHORS.md): Contributors and maintainers
+- [LICENSE.md](LICENSE.md): License details
+- [CODEOWNERS.md](CODEOWNERS.md): Code ownership and responsibilities
 
 ---
 
-## 📜 License
-
-Distributed under the terms of the [MIT License](./LICENSE.md).
-
----
-
-## 🔄 Changelog
-
-Refer to [`CHANGELOG.md`](./CHANGELOG.md) for a history of changes and releases.
-
----
-
-## 🚲 Acknowledgements
-
-Part of the **C-Hydro** initiative for hydrological modeling and satellite data integration.
+SLIPER is designed for modular scientific workflows with reproducibility and extensibility in mind.
 
