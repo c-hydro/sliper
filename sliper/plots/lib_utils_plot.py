@@ -1,7 +1,7 @@
 """
 Library Features:
 
-Name:          lib_utils_graph
+Name:          lib_utils_plot
 Author(s):     Fabio Delogu (fabio.delogu@cimafoundation.org)
 Date:          '20240109'
 Version:       '1.0.0'

@@ -3,7 +3,7 @@ Library Features:
 
 Name:          lib_data_io_pickle
 Author(s):     Fabio Delogu (fabio.delogu@cimafoundation.org)
-Date:          '20220320'
+Date:          '20250709'
 Version:       '1.0.0'
 """
 
@@ -17,11 +17,14 @@ from lib_info_args import logger_name
 
 # logging
 log_stream = logging.getLogger(logger_name)
+
+# debugging
+# import matplotlib.pylab as plt
 # ----------------------------------------------------------------------------------------------------------------------
 
 
 # ----------------------------------------------------------------------------------------------------------------------
-# method to read data obj
+# Method to read data obj
 def read_obj(file_name):
     data = None
     if os.path.exists(file_name):
@@ -31,7 +34,7 @@ def read_obj(file_name):
 
 
 # ----------------------------------------------------------------------------------------------------------------------
-# method to write data obj
+# Method to write data obj
 def write_obj(file_name, data):
     if os.path.exists(file_name):
         os.remove(file_name)

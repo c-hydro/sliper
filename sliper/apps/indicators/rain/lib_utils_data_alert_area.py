@@ -1,7 +1,7 @@
 """
 Library Features:
 
-Name:          lib_utils_data_sm
+Name:          lib_utils_data_alert_area
 Author(s):     Fabio Delogu (fabio.delogu@cimafoundation.org)
 Date:          '20250616'
 Version:       '1.0.0'

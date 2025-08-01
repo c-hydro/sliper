@@ -10,7 +10,7 @@ Version:       '1.0.0'
 # ----------------------------------------------------------------------------------------------------------------------
 # libraries
 import logging
-import functools
+
 import os
 import logging.config
 import glob
@@ -19,7 +19,6 @@ from lib_info_args import logger_name as logger_name_default
 from lib_info_args import logger_file as logger_file_default
 from lib_info_args import logger_handle as logger_handle_default
 from lib_info_args import logger_format as logger_formatter_default
-from lib_utils_system import make_folder
 
 # debugging
 # import matplotlib.pylab as plt
@@ -33,9 +32,6 @@ def set_logging_file(logger_file=logger_file_default, logger_name=logger_name_de
                      logger_history=False, logger_history_maxfiles=12,
                      logger_extra_tags=None):
 
-    # Set to flush progressbar output in logging stream handle
-    # progressbar.streams.wrap_stderr()
-
     if logger_extra_tags is not None:
         for extra_key, extra_value in logger_extra_tags.items():
             logger_file = logger_file.replace(extra_key, ':')
@@ -44,7 +40,7 @@ def set_logging_file(logger_file=logger_file_default, logger_name=logger_name_de
             logger_file = logger_file.format(*extra_value)
 
     logger_folder_name, logger_file_name = os.path.split(logger_file)
-    make_folder(logger_folder_name)
+    os.makedirs(logger_folder_name, exist_ok=True)
 
     # Save old logger file (to check run in the past)
     if logger_history:

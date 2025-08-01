@@ -22,8 +22,8 @@ time_format_algorithm = '%Y-%m-%d %H:%M'
 time_machine = pd.Timestamp.now
 
 # logging information
-logger_name = 'arpal_soilslips_viewer_logger'
-logger_file = 'arpal_soilslips_viewer.txt'
+logger_name = 'sliper_viewer_logger'
+logger_file = 'sliper_viewer.txt'
 logger_handle = 'file'  # 'file' or 'stream'
 logger_format = '%(asctime)s %(name)-12s %(levelname)-8s %(message)-80s ' \
                 '%(filename)s:[%(lineno)-6s - %(funcName)-20s()] '

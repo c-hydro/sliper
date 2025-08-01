@@ -15,14 +15,15 @@ Version(s):
 20240117 (1.0.0) --> Beta release
 """
 
-# -------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 # libraries
 import logging
 import time
 import os
 
-from driver_data_static import DriverData as DriverData_Static
-from driver_data_dynamic import DriverData as DriverData_Dynamic
+from driver_geo import DriverGeo
+# driver_data_static import DriverData as DriverData_Static
+from driver_data import DriverData
 
 from argparse import ArgumentParser
 
@@ -33,25 +34,25 @@ from lib_info_args import logger_name, time_format_algorithm
 
 # logging
 log_stream = logging.getLogger(logger_name)
-# -------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 
-# -------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 # algorithm information
 project_name = 'sliper'
 alg_name = 'SOIL SLIPS VIEWER TOOL'
 alg_type = 'Package'
-alg_version = '1.0.0'
-alg_release = '2024-01-12'
+alg_version = '1.5.0'
+alg_release = '2025-01-12'
 # algorithm parameter(s)
 time_format = '%Y-%m-%d %H:%M'
-# -------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 
 
-# -------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 # main
 def main():
 
-    # -------------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------------------------------------------
     # get algorithm settings
     alg_settings, alg_time = get_args()
 
@@ -62,9 +63,9 @@ def main():
     set_logging_file(
         logger_name=logger_name,
         logger_file=os.path.join(data_settings['log']['folder_name'], data_settings['log']['file_name']))
-    # -------------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------------------------------------------
 
-    # -------------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------------------------------------------
     # info algorithm start message
     log_stream.info(' ============================================================================ ')
     log_stream.info(' ==> ' + alg_name + ' (Version: ' + alg_version + ' Release_Date: ' + alg_release + ')')
@@ -73,59 +74,55 @@ def main():
 
     # info algorithm time
     start_time = time.time()
-    # -------------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------------------------------------------
 
-    # -------------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------------------------------------------
     # method to organize time
     time_run, time_range = set_time(
-        time_ref_args=alg_time,
-        time_ref_file=data_settings['time']['time_reference'],
-        time_ref_file_start=data_settings['time']['time_start'],
-        time_ref_file_end=data_settings['time']['time_end'],
+        time_run_args=alg_time,
+        time_run_file=data_settings['time']['time_now'],
+        time_run_file_start=data_settings['time']['time_start'],
+        time_run_file_end=data_settings['time']['time_end'],
         time_format=time_format_algorithm,
-        time_period=data_settings['time']['time_period'],
+        time_period_observed=data_settings['time']['time_period']['observed'],
+        time_period_forecast=data_settings['time']['time_period']['forecast'],
         time_frequency=data_settings['time']['time_frequency'],
         time_rounding=data_settings['time']['time_rounding']
     )
-    # -------------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------------------------------------------
 
-    # -------------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------------------------------------------
     # geographical datasets
-    driver_data_static = DriverData_Static(
+    driver_geo = DriverGeo(
         src_dict=data_settings['data']['static']['source'],
         dst_dict=data_settings['data']['static']['destination'],
         tmp_dict=data_settings['tmp'],
-        template_dict=data_settings['algorithm']['template'],
-        info_dict=data_settings['algorithm']['info'],
-        flags_dict=data_settings['algorithm']['flags'])
+        tags_dict=data_settings['algorithm']['template'],
+        flag_update=data_settings['algorithm']['flags']['update_static'])
+    # organize geo collections
+    geo_info, geo_da, geo_dframe = driver_geo.organize_data()
+    # ------------------------------------------------------------------------------------------------------------------
+
+    # --------------------------------------------------------------------------------------------------------------
+    # dynamic datasets
+    driver_data = DriverData(
+        time_run=time_run, time_range=time_range, geo_data=geo_info,
+        src_dict=data_settings['data']['dynamic']['source'],
+        anc_dict=data_settings['data']['dynamic']['ancillary'],
+        dst_dict=data_settings['data']['dynamic']['destination'],
+        tags_dict=data_settings['algorithm']['template'],
+        flag_update_src=data_settings['algorithm']['flags']['update_dynamic_source'],
+        flag_update_dst=data_settings['algorithm']['flags']['update_dynamic_destination'],
+        tmp_dict=data_settings['tmp'])
+
     # method to organize data
-    data_static_collection = driver_data_static.organize_data()
-    # -------------------------------------------------------------------------------------
+    data_collection = driver_data.organize_data()
+    # method to view data
+    driver_data.view_data(data_collection)
+    # ------------------------------------------------------------------------------------------------------------------
 
-    # -------------------------------------------------------------------------------------
-    # iterate over time steps
-    for time_step in time_range:
-
-        # -------------------------------------------------------------------------------------
-        # dynamic datasets
-        driver_data_dynamic = DriverData_Dynamic(
-            time_run=time_step,
-            static_obj=data_static_collection,
-            source_dict=data_settings['data']['dynamic']['source'],
-            ancillary_dict=data_settings['data']['dynamic']['ancillary'],
-            destination_dict=data_settings['data']['dynamic']['destination'],
-            template_dict=data_settings['algorithm']['template'],
-            info_dict=data_settings['algorithm']['info'],
-            flags_dict=data_settings['algorithm']['flags'],
-            tmp_dict=data_settings['tmp'])
-        # method to organize data
-        data_source_collection = driver_data_dynamic.organize_data()
-        # method to view data
-        driver_data_dynamic.view_data(data_source_collection)
-    # -------------------------------------------------------------------------------------
-
-    # -------------------------------------------------------------------------------------
-    # # info algorithm end message
+    # ------------------------------------------------------------------------------------------------------------------
+    # info algorithm end message
     time_elapsed = round(time.time() - start_time, 1)
 
     log_stream.info(' ')
@@ -134,12 +131,12 @@ def main():
     log_stream.info(' ==> ... END')
     log_stream.info(' ==> Bye, Bye')
     log_stream.info(' ============================================================================ ')
-    # -------------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------------------------------------------
 
-# -------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 
 
-# -------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 # method to get script argument(s)
 def get_args():
     parser_handle = ArgumentParser()
@@ -155,11 +152,11 @@ def get_args():
 
     return alg_settings, alg_time
 
-# -------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 
 
-# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 # call main
 if __name__ == '__main__':
     main()
-# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------

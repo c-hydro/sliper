@@ -3,138 +3,65 @@ Library Features:
 
 Name:          lib_data_io_geo
 Author(s):     Fabio Delogu (fabio.delogu@cimafoundation.org)
-Date:          '20230307'
+Date:          '20250616'
 Version:       '1.0.0'
 """
+
 # ----------------------------------------------------------------------------------------------------------------------
-# Library
+# libraries
 import logging
 import os
-import unicodedata
-
-import numpy as np
-import pandas as pd
 import rasterio
+import numpy as np
+
 from rasterio.crs import CRS
 
+from lib_utils_generic import create_darray
 from lib_info_args import logger_name
-from lib_info_args import (geo_coord_name_x, geo_coord_name_y,
-                           geo_var_name_x, geo_var_name_y,
-                           geo_dim_name_x, geo_dim_name_y)
-from lib_utils_obj import create_darray_2d, sanitize_string
 
-# set logger level
+# logging
 logging.getLogger('rasterio').setLevel(logging.WARNING)
-# set logger obj
-alg_logger = logging.getLogger(logger_name)
+log_stream = logging.getLogger(logger_name)
 
-# debug
-# import matplotlib.pylab as plt
-# ----------------------------------------------------------------------------------------------------------------------##
-
-
-# ----------------------------------------------------------------------------------------------------------------------
-# method to check grid data
-def check_obj_data(data_file_name, data_obj=None, data_attrs=None, data_mandatory=True):
-    if (data_obj is None) and (data_attrs is None):
-        if data_mandatory:
-            alg_logger.error(' ===> Data object "' + data_file_name + '" is not available')
-            raise FileNotFoundError('File is mandatory to correctly run the algorithm')
-        else:
-            alg_logger.warning(' ===> Data object "' + data_file_name + '" is not available')
+# debugging
+import matplotlib.pylab as plt
 # ----------------------------------------------------------------------------------------------------------------------
 
 
 # ----------------------------------------------------------------------------------------------------------------------
-# method to read point data
-def read_point_data(file_name,
-                    file_delimiter=',', file_header=0, file_columns_remap=None,
-                    file_units_default='%', file_description_default='NA',
-                    file_location_default='NA', file_tag_default='NA'):
-
-    if file_columns_remap is None:
-        file_columns_remap = {"altitude": "altitude", "amm_level_1": "amm_level_1", "amm_level_2": "amm_level_2",
-                              "code": "code", "longitude": "longitude", "latitude": "latitude",
-                              "description": "description", "name": "names", "valid": "valid",
-                              "units": "units", "location": "locations", "tag": "tag"}
-    remap_keys, remap_values = list(file_columns_remap.keys()), list(file_columns_remap.values())
-
-    df_point = pd.read_csv(file_name, delimiter=file_delimiter, header=file_header)
-    df_point.columns = df_point.columns.str.replace(' ', '')
-    columns_keys = list(df_point.columns)
-
-    df_remap = {}
-    for remap_key, remap_value in zip(remap_keys, remap_values):
-        if remap_value in columns_keys:
-            df_remap[remap_value] = remap_key
-        else:
-            alg_logger.warning(' ===> Column "' + remap_value + '" is not available in the source registry')
-
-    df_point_remap = df_point.rename(columns=df_remap)
-
-    select_keys, select_values = list(df_remap.keys()), list(df_remap.values())
-    if "units" not in columns_keys:
-        df_point_remap['units'] = file_units_default
-        select_values.append('units')
-    if "description" not in columns_keys:
-        df_point_remap['description'] = file_description_default
-        select_values.append('description')
-    if "location" not in columns_keys:
-        df_point_remap['location'] = file_location_default
-        select_values.append('location')
-    if "tag" not in columns_keys:
-        df_point_remap['tag'] = file_tag_default
-        select_values.append('tag')
-
-    df_point_remap['name'] = df_point_remap['name'].str.strip()
-    df_point_remap['description'] = df_point_remap['description'].str.strip()
-    df_point_remap['location'] = df_point_remap['location'].str.strip()
-    df_point_remap['tag'] = df_point_remap['tag'].str.strip()
-
-    select_values = list(set(select_values))
-
-    df_point_select = df_point_remap[select_values]
-
-    if 'valid' in list(df_point_remap.columns):
-        df_point_select = df_point_select.loc[df_point_remap['valid'] == 1]
-
-    if 'tag' in list(df_point_remap.columns):
-        if all(df_point_remap['tag'] == 'NA'):
-
-            point_name = df_point_select['name']
-            list_tag = []
-            for string_name in point_name.values:
-                string_tag = sanitize_string(string_name)
-                list_tag.append(string_tag)
-
-            df_point_select['tag'] = list_tag
-
-    return df_point_select
-# ----------------------------------------------------------------------------------------------------------------------
-
-
-# ----------------------------------------------------------------------------------------------------------------------
-# method to read grid data
-def read_grid_data(file_name, output_format='data_array', output_dtype='float32',
-                   var_limit_min=None, var_limit_max=None, var_proj='EPSG:4326',
-                   coord_name_x=geo_coord_name_x, coord_name_y=geo_coord_name_y,
-                   dim_name_x=geo_dim_name_x, dim_name_y=geo_dim_name_y, binary_mask=False):
+# method to read an ascii or tiff file
+def read_file_grid(file_name, output_format='data_array', output_dtype='float32',
+                   var_limit_min=None, var_limit_max=None, var_proj='EPSG:4326'):
 
     try:
         dset = rasterio.open(file_name)
-        bounds, res, transform = dset.bounds, dset.res, dset.transform
+        bounds = dset.bounds
+        res = dset.res
+        transform = dset.transform
         data = dset.read()
 
-        if dset.crs is None:
-            crs = 'EPSG:4326'
-            # crs = CRS.from_string(var_proj) bug in rasterio (check how to solve it)
+        # manage crs import
+        crs = None
+        try:
+            if dset.crs is None:
+                crs = CRS.from_string(var_proj)
+            else:
+                crs = dset.crs
+        except BaseException as base_exp:
+            log_stream.warning(' ===> CRS not set due to unknown reason "' + str(base_exp) + '"')
+            log_stream.warning(' ===> GDAL_DATA folder must be defined from the reference conda environment')
+
+        epsg_code = crs.to_epsg()
+
+        if epsg_code is not None:
+            epsg_string = f"EPSG:{epsg_code}"
         else:
-            crs = dset.crs
+            epsg_string = var_proj
 
         if output_dtype == 'float32':
             values = np.float32(data[0, :, :])
         else:
-            alg_logger.error(' ===> Data type is not allowed.')
+            log_stream.error(' ===> Data type is not allowed.')
             raise NotImplementedError('Case not implemented yet')
 
         if var_limit_min is not None:
@@ -144,28 +71,28 @@ def read_grid_data(file_name, output_format='data_array', output_dtype='float32'
             var_limit_max = np.float32(var_limit_max)
             values[values > var_limit_max] = np.nan
 
-        if binary_mask:
-            values[(values >= 0) & (values <= 1)] = 1
-            values[values < 0] = 0
-            values[values > 1] = 0
-            values[np.isnan(values)] = 0
-
         decimal_round_geo = 7
-        # 6.5199,47.2175
+
         center_right = bounds.right - (res[0] / 2)
         center_left = bounds.left + (res[0] / 2)
         center_top = bounds.top - (res[1] / 2)
         center_bottom = bounds.bottom + (res[1] / 2)
 
         if center_bottom > center_top:
-            alg_logger.warning(' ===> Coords "center_bottom": ' + str(center_bottom) + ' is greater than "center_top": '
-                            + str(center_top) + '. Try to inverse the bottom and top coords. ')
+            log_stream.warning(' ===> Coords "center_bottom": ' + str(center_bottom) + ' is greater than "center_top": '
+                               + str(center_top) + '. Try to inverse the bottom and top coords. ')
             center_tmp = center_top
             center_top = center_bottom
             center_bottom = center_tmp
 
-        lon = np.arange(center_left, center_right + np.abs(res[0] / 2), np.abs(res[0]), float)
-        lat = np.flip(np.arange(center_bottom, center_top + np.abs(res[1] / 2), np.abs(res[1]), float), axis=0)
+            values = np.flipud(values)
+
+        # rows (height) and cols (width) of the data
+        height, width = values.shape
+        rows, cols = values.shape
+
+        lon = np.linspace(center_left, center_right, width)
+        lat = np.flip(np.linspace(center_bottom, center_top, height))
         lons, lats = np.meshgrid(lon, lat)
 
         lat_upper = lats[0, 0]
@@ -189,35 +116,51 @@ def read_grid_data(file_name, output_format='data_array', output_dtype='float32'
         assert min_lat_round == center_bottom_round
         assert max_lat_round == center_top_round
 
-        data_attrs = {'transform': transform, 'crs': crs,
+        data_attrs = {'transform': transform, 'crs': crs, 'epsg': epsg_string,
+                      'height': height, 'width': width,
                       'bbox': [bounds.left, bounds.bottom, bounds.right, bounds.top],
                       'bb_left': bounds.left, 'bb_right': bounds.right,
                       'bb_top': bounds.top, 'bb_bottom': bounds.bottom,
                       'res_lon': res[0], 'res_lat': res[1]}
 
-        if output_format == 'dictionary':
+        """ debugging plots
+        plt.figure()
+        plt.imshow(values)
+        plt.colorbar()
 
-            data_var = {'values': values, geo_var_name_x: lons[0, :], geo_var_name_y: lats[:, 0]}
-            data_obj = {**data_var, **data_attrs}
+        plt.figure()
+        plt.imshow(lons)
+        plt.colorbar()
 
-        elif output_format == 'data_array':
+        plt.figure()
+        plt.imshow(lats)
+        plt.colorbar()
 
-            data_obj = create_darray_2d(
-                values, lons[0, :], lats[:, 0],
-                coord_name_x=coord_name_x, coord_name_y=coord_name_y,
-                dim_name_x=dim_name_x, dim_name_y=dim_name_y)
+        plt.show(block=False)
+        """
+
+        if output_format == 'data_array':
+
+            data_obj = create_darray(values, lons[0, :], lats[:, 0],
+                                     coord_name_x='longitude', coord_name_y='latitude',
+                                     dim_name_x='longitude', dim_name_y='latitude')
 
             data_obj.attrs = data_attrs
-        else:
 
-            alg_logger.error(' ===> File static "' + file_name + '" output format not allowed')
+        elif output_format == 'dictionary':
+
+            data_var = {'values': values, 'longitude': lons[0, :], 'latitude': lats[:, 0]}
+            data_obj = {**data_var, **data_attrs}
+
+        else:
+            log_stream.error(' ===> File static "' + file_name + '" output format not allowed')
             raise NotImplementedError('Case not implemented yet')
 
     except IOError as io_error:
 
-        data_obj, data_attrs = None, None
-        alg_logger.warning(' ===> File static grid was not correctly open with error "' + str(io_error) + '"')
-        logging.warning(' ===> Filename "' + os.path.split(file_name)[1] + '"')
+        data_obj = None
+        log_stream.warning(' ===> File static in ascii grid was not correctly open with error "' + str(io_error) + '"')
+        log_stream.warning(' ===> Filename "' + os.path.split(file_name)[1] + '"')
 
-    return data_obj, data_attrs
+    return data_obj
 # ----------------------------------------------------------------------------------------------------------------------
