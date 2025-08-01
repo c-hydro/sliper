@@ -359,6 +359,5 @@ class DriverPlot:
         os.makedirs(file_path, exist_ok=True)
         fig.savefig(file_name, dpi=self.dpi)
         plt.close()
-        print()
 
 # ----------------------------------------------------------------------------------------------------------------------
