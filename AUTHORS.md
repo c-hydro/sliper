@@ -1,4 +1,7 @@
 # Authors
 
 - Fabio Delogu <fabio.delogu@cimafoundation.org>
-- Martina Natali <martina01.natali@edu.unife.it>
+- Francesco Silvestro <francesco.silvestro@cimafoundation.org>
+- Stefania Magri <stefania.magri@arpal.liguria.it>
+- Monica Solimano <monica.solimano@arpal.liguria.it>
+- Cristina Malatesta <cristina.malatesta@arpal.liguria.it>
