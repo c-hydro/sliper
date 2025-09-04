@@ -2,7 +2,7 @@
 
 #-----------------------------------------------------------------------------------------
 # Script information
-script_name='RECOLOUR ENVIRONMENT - PYTHON3 LIBRARIES FOR PACKAGE - RUNNER DATA - CONDA'
+script_name='SLIPER ENVIRONMENT - PYTHON LIBRARIES FOR PACKAGE - RUNNER DATA - CONDA'
 script_version="1.6.4"
 script_date='2025/06/16'
 

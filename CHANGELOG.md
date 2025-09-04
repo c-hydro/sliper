@@ -4,7 +4,7 @@ All notable changes to this project are documented in this file.
 
 ---
 
-## [3.0.0] – 2025-07-30
+## [3.0.0] – 2025-09-04
 ### Added
 - Unified SLIPER runner integrating previous tools under a single modular framework
 - Workspace-based I/O structure (data_static, data_dynamic, tmp, log)
@@ -15,7 +15,7 @@ All notable changes to this project are documented in this file.
 - Add applications to define scenarios
 - Add applications to define predictors
 - Add applications to view scenarios/predictors results
-- Add utils and tools to manage datasets
+- Add utils and tools to manage datasets (organizer and checker for sm and rain datasets)
 
 ### Changed
 - Refactored runner logic for maintainability and consistency
