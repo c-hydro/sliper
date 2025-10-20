@@ -4,6 +4,17 @@ All notable changes to this project are documented in this file.
 
 ---
 
+## [3.1.0] – 2025-10-20
+### Added
+- Operational release (forecast and observed mode)
+- Applications to collect and manage datasets (rain, soil moisture and soil slips)
+- Applications to define indicators (rain and soil moisture)
+- Applications to define scenarios
+- Applications to define predictors
+- Applications to analyze indicators, scenarios and predictors daily time-series
+- Script to manage and organize run
+- Script to sync forecast/observed datasets to realtime modes
+
 ## [3.0.0] – 2025-09-04
 ### Added
 - Unified SLIPER runner integrating previous tools under a single modular framework
