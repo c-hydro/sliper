@@ -1,0 +1,20 @@
+{
+  "time_ref": "now",
+  "tz": "Europe/Rome",
+  "summary": {
+    "folder_template": "/home/admin/soilslips-ws/data_dynamic/source/run/{YYYY}/{MM}/{DD}",
+    "filename_template": "info_run_{YYYY}{MM}{DD}_{RUN}.json"
+  },
+  "files": {
+    "data": {
+      "source": {
+        "folder_template": "/mnt/MeteoData/RainGRISO",
+        "glob": "Rain_*.tif"
+      },
+      "dest": {
+        "folder_template": "/home/admin/soilslips-ws/data_dynamic/source/data/rain/frc/perc80/{YYYY}/{MM}/{DD}/{RUN}"
+      }
+    }
+  }
+}
+

@@ -2,8 +2,8 @@
 """
 SLIPER APP - SCENARIOS PROCESSING - Soil Landslide Information and Prediction & Early Response
 
-__date__ = '20250721'
-__version__ = '2.5.0'
+__date__ = '20251007'
+__version__ = '2.6.0'
 __author__ =
         'Fabio Delogu (fabio.delogu@cimafoundation.org',
         'Francesco Silvestro (francesco.silvestro@cimafoundation.org)',
@@ -16,6 +16,7 @@ General command line:
 python sliper_app_scenarios_main.py -settings_file configuration.json -time "YYYY-MM-DD HH:MM"
 
 Version(s):
+20251007 (2.6.0) --> Operational release; ensure realtime setup and fix bugs related
 20250620 (2.5.0) --> Beta release for sliper package based on previous package(s) and version(s)
 20250430 (2.0.5) --> Fix and review codes for operational release based on realtime requirements
 20250310 (2.0.4) --> Fix and review codes for operational release based on realtime requirements
@@ -56,10 +57,9 @@ log_stream = logging.getLogger(logger_name)
 project_name = 'sliper'
 alg_name = 'SLIPER APP - SCENARIOS PROCESSING'
 alg_type = 'Package'
-alg_version = '2.5.0'
-alg_release = '2025-07-21'
+alg_version = '2.6.0'
+alg_release = '2025-10-07'
 # ----------------------------------------------------------------------------------------------------------------------
-
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Script Main
@@ -92,16 +92,18 @@ def main():
 
     # ------------------------------------------------------------------------------------------------------------------
     # Organize time run
-    time_run, time_range = set_time(
+    time_ref, time_run, time_range = set_time(
         time_run_args=alg_time,
-        time_run_file=data_settings['time']['time_now'],
+        time_run_file=data_settings['time']['time_run'],
         time_run_file_start=data_settings['time']['time_start'],
         time_run_file_end=data_settings['time']['time_end'],
         time_format=time_format_algorithm,
-        time_period=data_settings['time']['time_period'],
-        time_frequency=data_settings['time']['time_frequency'],
-        time_rounding=data_settings['time']['time_rounding'],
-        time_reverse=False
+        time_period_obs=data_settings['time']['time_period']['obs'],
+        time_period_frc=data_settings['time']['time_period']['frc'],
+        freq=data_settings['time']['time_frequency'],
+        align_start_to_midnight=data_settings['time']['time_start_align_to_midnight'],
+        align_end_to_midnight=data_settings['time']['time_end_align_to_midnight'],
+        time_reverse=data_settings['time']['time_reverse']
     )
     # ------------------------------------------------------------------------------------------------------------------
 
@@ -120,7 +122,7 @@ def main():
     # ------------------------------------------------------------------------------------------------------------------
     # driver to define indicators
     driver_scenarios = DriverScenarios(
-        time_run, time_range,
+        time_ref, time_run, time_range,
         src_dict=data_settings['data']['dynamic']['source'],
         anc_dict=data_settings['data']['dynamic']['ancillary'],
         dst_dict=data_settings['data']['dynamic']['destination'],
@@ -131,11 +133,11 @@ def main():
         flag_update_dst=data_settings['algorithm']['flags']['update_dynamic_destination'])
 
     # method to organize data collections
-    data_collections, time_collections = driver_scenarios.organize_data()
+    time_pivot, data_collections, time_collections = driver_scenarios.organize_data()
     # method to analyze data collections
-    analysis_collections = driver_scenarios.analyze_data(data_collections, time_collections)
+    analysis_collections = driver_scenarios.analyze_data(time_pivot, data_collections, time_collections)
     # method to dump data collections
-    driver_scenarios.dump_data(analysis_collections)
+    driver_scenarios.dump_data(time_pivot, analysis_collections)
     # ------------------------------------------------------------------------------------------------------------------
 
     # ------------------------------------------------------------------------------------------------------------------

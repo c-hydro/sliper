@@ -1,0 +1,30 @@
+{
+  "time_ref": "now",
+  "tz": "Europe/Rome",
+  "summary": {
+    "folder_template": "/home/admin/soilslips-ws/data_dynamic/source/run/{YYYY}/{MM}/{DD}",
+    "filename_template": "info_run_{YYYY}{MM}{DD}_{RUN}.json"
+  },
+  "args": {
+    "max_diff_hours": 10,
+  	"domain": [
+  		"AvetoTrebbiaDomain", "BormidaMDomain", "BormidaSDomain",
+    	"CentaDomain", "CentroPonenteDomain", "EntellaDomain", "ErroDomain",
+    	"FinaleseDomain", "ImperieseDomain", "LevanteGenoveseDomain",
+    	"MagraDomain", "OrbaSturaDomain", "PonenteDomain", "PonenteGenoveseDomain",
+    	"RoiaDomain", "SavoneseDomain", "ScriviaDomain", "TanaroDomain"
+    ]
+  },
+  "files": {
+    "data": {
+      "source": {
+        "folder_template": "/mnt/ModelloContinuum/archive/{DOMAIN}/weather_stations_realtime/{YYYY}/{MM}/{DD}/gridded",
+        "glob": "hmc.output-grid.*.nc.gz"
+      },
+      "dest": {
+        "folder_template": "/home/admin/soilslips-ws/data_dynamic/source/data/soil_moisture/frc/{DOMAIN}/{YYYY}/{MM}/{DD}/{RUN}"
+      }
+    }
+  }
+}
+

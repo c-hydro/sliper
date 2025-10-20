@@ -1,0 +1,6 @@
+
+## SM INDICATORS
+# History mode
+ /home/admin/soilslips-exec/indicators/sliper_app_indicators_sm_frc_history.sh --date "2025-10-07 16:00" --mode history --force
+# Realtime mode
+ /home/admin/soilslips-exec/indicators/sliper_app_indicators_sm_frc_realtime.sh --force

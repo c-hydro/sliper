@@ -116,7 +116,7 @@ class DriverGeoAlertArea:
     def wrap_geo_data(self, file_name: str, file_type: str, file_format: str, file_mandatory: bool = True):
 
         # info start
-        log_stream.info(' -----> Get source ... ')
+        log_stream.info(' -----> Compute geo datasets ... ')
 
         # check data availability
         if os.path.exists(file_name):
@@ -168,7 +168,7 @@ class DriverGeoAlertArea:
                 geo_obj = None
 
         # info end
-        log_stream.info(' -----> Get source ... DONE')
+        log_stream.info(' -----> Compute geo datasets ... DONE')
 
         return geo_obj
 
@@ -180,7 +180,7 @@ class DriverGeoAlertArea:
                            geo_polygons_src: dict = None, geo_mandatory: bool = True):
 
         # info start
-        log_stream.info(' -----> Compute ancillary ... ')
+        log_stream.info(' -----> Compute geo ancillary ... ')
 
         if geo_da_src is None or geo_polygons_src is None:
             if geo_mandatory:
@@ -351,7 +351,7 @@ class DriverGeoAlertArea:
             log_stream.info(' ------> Analyze "' + group_name + '" ... DONE')
 
         # info end
-        log_stream.info(' -----> Compute ancillary ... DONE')
+        log_stream.info(' -----> Compute geo ancillary ... DONE')
 
         return geo_data_group, geo_point_group
     # ------------------------------------------------------------------------------------------------------------------
@@ -360,8 +360,8 @@ class DriverGeoAlertArea:
     # Method to organize geographical data
     def organize_data(self):
 
-        # Ending info
-        log_stream.info(' ----> Organize alert area geographical data ... DONE')
+        # info start
+        log_stream.info(' ----> Organize alert area geographical data ... ')
 
         # define path name destination
         path_name_dst = fill_template_string(
@@ -407,6 +407,9 @@ class DriverGeoAlertArea:
             geo_collections = read_obj(path_name_dst)
             geo_info = geo_collections['info']
             geo_data, geo_point = geo_collections['geo_data'], geo_collections['geo_point']
+
+        # info end
+        log_stream.info(' ----> Organize alert area geographical data ... DONE')
 
         return geo_info, geo_data, geo_point
     # ------------------------------------------------------------------------------------------------------------------

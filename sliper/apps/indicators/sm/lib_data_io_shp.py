@@ -96,9 +96,13 @@ def convert_shp_2_tiff(shape_file, tiff_file=None, tiff_remove=True,
         # create a temporary folder in the same directory of the shape file
         folder_tmp = os.path.dirname(shape_file)
 
+    # define grid filename
     if tiff_file is not None:
         grid_file = tiff_file
     else:
+        # ensure create temporary folder
+        os.makedirs(folder_tmp, exist_ok=True)
+        # get filename using tmp folder
         grid_file = create_filename_tmp(folder=folder_tmp)
 
     # convert shapefile to raster

@@ -10,10 +10,18 @@ Version:       '1.0.0'
 # libraries
 import logging
 import re
+import os
 import tempfile
 import numpy as np
 import xarray as xr
 import pandas as pd
+from pathlib import Path
+
+from collections import OrderedDict
+try:
+    from zoneinfo import ZoneInfo
+except Exception:
+    ZoneInfo = None
 
 from datetime import datetime
 from typing import Dict, Any, Optional, Union, List
@@ -25,6 +33,426 @@ log_stream = logging.getLogger(logger_name)
 
 # initialize variables
 attrs_decoded = []
+# ----------------------------------------------------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------------------------------------------------
+# method to detect token
+def detect_token(s: str, tokens: list[str]):
+    found = [tok for tok in tokens if tok in s]
+    if len(found) > 1:
+        raise ValueError(f"Multiple tokens found: {found}")
+    elif len(found) == 0:
+        return None
+    else:
+        return found[0]
+# ----------------------------------------------------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------------------------------------------------
+# method to validate datetime index
+def validate_time_index(*indexes):
+    return all(
+        isinstance(idx, pd.DatetimeIndex) and not idx.empty
+        for idx in indexes if idx is not None
+    )
+# ----------------------------------------------------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------------------------------------------------
+# method to get common keys of dict(s)
+def get_common_time_index(*indexes, reverse=True):
+
+    if not indexes:
+        return pd.DatetimeIndex([])
+
+    # ensure all inputs are DatetimeIndex
+    for i, idx in enumerate(indexes):
+        if not isinstance(idx, pd.DatetimeIndex):
+            raise TypeError(f"Argument {i + 1} is not a pandas.DatetimeIndex")
+
+    # intersection across all indexes
+    common = indexes[0]
+    for idx in indexes[1:]:
+        common = common.intersection(idx)
+
+    return common.sort_values(ascending=not reverse)
+# ----------------------------------------------------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------------------------------------------------
+# method to extrac timestamp from filenames
+def extract_timestamps_from_filenames(files, date_ref=None, date_format="%Y%m%d%H%M", date_ascending=False):
+    """
+    Extract timestamps from filenames according to a specified datetime format.
+
+    Expected pattern: the date/time token is the 3rd element (index 2) when splitting
+    the filename by underscores, e.g.:
+        indicators_rain_202510091500_alert_area_a.csv
+
+    Args:
+        files (list[Path] | list[str]): list of file paths
+        date_format (str): datetime format string (default "%Y%m%d%H%M")
+        date_ref (pd.Timestamp): datetime reference
+        date_ascending (bool): timestamps sorting
+
+    Returns:
+        pd.Series: Series mapping each Path to its parsed datetime, sorted by datetime.
+    """
+    timestamps = []
+    for f in files:
+        f = Path(f)
+        parts = f.stem.split('_')
+        try:
+            date_str = parts[2]
+            ts = datetime.strptime(date_str, date_format)
+
+            if date_ref is not None:
+                if ts <= date_ref:
+                    timestamps.append(pd.Timestamp(ts))
+            else:
+                timestamps.append(pd.Timestamp(ts))
+        except (IndexError, ValueError):
+            # skip files that don't match expected format
+            continue
+
+    timestamps = pd.DatetimeIndex(timestamps)
+    timestamps = timestamps.sort_values(ascending=date_ascending)
+
+    if timestamps.empty:
+        timestamps = None
+
+    return timestamps
+# ----------------------------------------------------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------------------------------------------------
+# method to list file and filter by tags
+def get_files_with_tags(folder_path, tags=None, recursive=True):
+    """
+    List all files inside a folder and filter by a list of strings (tags).
+
+    Args:
+        folder_path (str | Path): The path to the folder.
+        tags (list[str], optional): List of substrings that must appear in the filename.
+                                    If None or empty, returns all files.
+        recursive (bool, optional): If True, searches subdirectories recursively.
+
+    Returns:
+        list[Path]: List of matching file paths.
+    """
+    folder = Path(folder_path)
+    if not folder.exists():
+        raise FileNotFoundError(f"Path not found: {folder_path}")
+
+    pattern = "**/*" if recursive else "*"
+    files = [f for f in folder.glob(pattern) if f.is_file()]
+
+    if tags:
+        files = [
+            f for f in files
+            if all(tag.lower() in f.name.lower() for tag in tags)
+        ]
+
+    return files
+# ----------------------------------------------------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------------------------------------------------
+# method to split string by token
+def split_string_by_token(full_string: str, token: str):
+    """
+    Split a path string into two parts based on a placeholder token.
+
+    Args:
+        full_string (str): The complete path string.
+        token (str): The placeholder token to split by (e.g. "{run_sub_path_time}").
+
+    Returns:
+        tuple[str, str]: (base, sub)
+            - base: path up to and including the token
+            - sub:  remaining part (starts with '/' if present)
+        If the token is not found, returns (full_string, '').
+
+    Example:
+        >>> split_string_by_token("/data/path/{run_sub_path_time}/2024/01", "{run_sub_path_time}")
+        ('/data/path/{run_sub_path_time}', '/2024/01')
+        >>> split_string_by_token("/data/path/{run_sub_path_time}/2024/01", "run_sub_path_time")
+        ('/data/path/{run_sub_path_time}', '/2024/01')
+        >>> split_string_by_token("/data/path/static/2024/01", "{run_sub_path_time}")
+        ('/data/path/static/2024/01', '')
+    """
+    # --- Normalize token to ensure it has { } ---
+    token_stripped = token.strip()
+    if not token_stripped.startswith("{"):
+        token_stripped = "{" + token_stripped
+    if not token_stripped.endswith("}"):
+        token_stripped = token_stripped + "}"
+
+    token = token_stripped
+
+    # --- Check if token exists in full_string ---
+    if token not in full_string:
+        # Return original unchanged path and empty subpath
+        return full_string, ''
+
+    # --- Perform the split ---
+    base, _, remainder = full_string.partition(token)
+    base = base + token
+    sub = remainder if remainder.startswith('/') else '/' + remainder if remainder else ''
+    return base, sub
+# ----------------------------------------------------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------------------------------------------------
+# method to format sub path by time
+def format_sub_path_by_time(ts: pd.Timestamp, pattern: str) -> str:
+    """
+    Format a run_sub_path_time pattern (like %Y/%m/%d/%H00 or %Y/%m/%d/*00)
+    using a pandas Timestamp.
+
+    Args:
+        ts (pd.Timestamp): The timestamp to use for formatting.
+        pattern (str): A strftime-like pattern that may include '*' wildcards,
+                       e.g. "%Y/%m/%d/%H00/" or "%Y/%m/%d/*00/"
+
+    Returns:
+        str: The formatted sub-path string.
+    """
+    # ensure Timestamp object
+    if not isinstance(ts, pd.Timestamp):
+        ts = pd.Timestamp(ts)
+
+    # only strftime parts will be replaced; '*' remains as-is
+    return ts.strftime(pattern)
+# ----------------------------------------------------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------------------------------------------------
+# method to extract time stamps from paths
+def extract_timestamps_from_paths(path_template: str, tokens: dict,
+                             ascending: bool = True, path_format="%Y/%m/%d/%H%M") -> (pd.DatetimeIndex, None):
+
+    # --- Timezone setup ---
+    tz_name = tokens.get("tz")
+    tz = None
+    if tz_name and ZoneInfo:
+        try:
+            tz = ZoneInfo(tz_name)
+        except Exception:
+            tz = None
+
+    found = False
+    for token in tokens:
+        if token in path_template:
+            found = True
+            break
+
+    if found:
+
+        # --- Fill template ---
+        try:
+            filled = os.path.expanduser(path_template.format(**tokens))
+        except KeyError as e:
+            raise ValueError(f"Missing token for template: {e}")
+
+        filled = os.path.normpath(filled) if "*" not in filled else os.path.normpath(
+            filled.replace("*", "*")
+        )
+    else:
+        filled = path_template
+
+    def format_to_regex(
+            fmt: str,
+            *,
+            anchor: str = "exact",  # "exact" | "end" | "none"
+            allow_trailing_slash: bool = False,
+    ) -> str:
+        """
+        Convert a strftime-like format (even partial ones) into a regex with named captures.
+
+        Supported tokens:
+          %Y  ->  4-digit year      (?P<Y>\\d{4})
+          %m  ->  2-digit month     (?P<m>\\d{2})
+          %d  ->  2-digit day       (?P<d>\\d{2})
+          %H  ->  2-digit hour      (?P<H>\\d{2})
+          %M  ->  2-digit minute    (?P<M>\\d{2})
+
+        anchor: "exact" (default) -> ^...$
+                "end"             -> ...$
+                "none"            -> no anchors (good for re.search)
+        allow_trailing_slash: if True, makes a final '/' optional
+
+        Examples:
+            format_to_regex("%Y/%m/", anchor="exact")
+                -> ^(?P<Y>\\d{4})/(?P<m>\\d{2})/$
+            format_to_regex("%Y/%m/%d/%H", anchor="end")
+                -> (?P<Y>\\d{4})/(?P<m>\\d{2})/(?P<d>\\d{2})/(?P<H>\\d{2})$
+            format_to_regex("%Y/%m/%d/%H00", anchor="none")
+                -> (?P<Y>\\d{4})/(?P<m>\\d{2})/(?P<d>\\d{2})/(?P<H>\\d{2})00
+        """
+
+        mapping = {
+            "%Y": r"(?P<Y>\d{4})",
+            "%m": r"(?P<m>\d{2})",
+            "%d": r"(?P<d>\d{2})",
+            "%H": r"(?P<H>\d{2})",
+            "%M": r"(?P<M>\d{2})",
+        }
+
+        # Preserve literal percent signs written as '%%'
+        PCT = "\x00PCT\x00"
+        fmt = fmt.replace("%%", PCT)
+
+        # Escape all literal characters
+        regex = re.escape(fmt)
+
+        # Replace supported tokens with their regex equivalents
+        for token, repl in mapping.items():
+            regex = regex.replace(re.escape(token), repl)
+
+        # Normalize forward slashes (re.escape escapes them)
+        regex = regex.replace(r"\/", "/")
+
+        # Restore literal percent signs
+        regex = regex.replace(PCT, "%")
+
+        # Optionally allow a trailing slash
+        if allow_trailing_slash and regex.endswith("/"):
+            # If fmt ends with '/', make it optional
+            regex = f"{regex[:-1]}/?"
+
+        # Apply anchoring
+        if anchor == "exact":
+            regex = f"^{regex}$"
+        elif anchor == "end":
+            regex = f"{regex}$"
+        elif anchor == "none":
+            pass
+        else:
+            raise ValueError("anchor must be 'exact', 'end', or 'none'")
+
+        # Sanity check: no stray % tokens remain
+        if "%" in regex:
+            # There is at least one unsupported strftime-like token
+            raise ValueError("Unsupported format token found in fmt.")
+
+        return regex
+
+    def extract_timestamp(
+            path: str, fmt="%Y/%m/%d/%H%M", tz="Europe/Rome", include_offset=False) -> dict:
+        """
+        Extract a timestamp from a file path based on a strftime-like format.
+        - Automatically ignores missing parts (e.g., no %H or no %Y)
+        - Optionally appends the timezone offset (e.g. '+0200') if include_offset=True
+        """
+        pattern = format_to_regex(fmt, anchor='none', allow_trailing_slash=True)
+        m = re.search(pattern, path)
+        if not m:
+            return None
+
+        # Rebuild matched string using only available parts in fmt
+        matched = fmt
+        for key, value in m.groupdict().items():
+            if value is not None:
+                matched = matched.replace(f"%{key}", value)
+
+        # Convert to datetime safely
+        try:
+            ts = pd.to_datetime(matched, format=fmt)
+        except ValueError:
+            ts = pd.to_datetime(matched, errors="coerce")
+
+        if pd.isnull(ts):
+            return None
+
+        # Optionally add the offset explicitly
+        if include_offset:
+            # Localize to timezone
+            ts = ts.tz_localize(tz)
+            # get offset string like +0200
+            offset = ts.strftime("%z")
+            # append it to timestamp string
+            ts_str = ts.strftime(f"{fmt} {offset}")
+            # parse back into timezone-aware Timestamp
+            ts = pd.to_datetime(ts_str, format=f"{fmt} %z")
+
+        return ts
+
+    # --- No wildcard case ---
+    if "*" not in filled:
+
+        abs_path = os.path.abspath(filled)
+        if not os.path.exists(abs_path):
+            return None
+        time_key = extract_timestamp(abs_path, fmt=path_format)
+
+        time_obj = {pd.Timestamp(time_key): abs_path}
+        return time_obj
+
+    # --- Wildcard handling ---
+    prefix = filled.split("*", 1)[0]
+    if prefix.endswith(os.sep):
+        parent = prefix.rstrip(os.sep) or os.sep
+        name_prefix = ""
+    else:
+        parent = os.path.dirname(prefix) or os.sep
+        name_prefix = os.path.basename(prefix)
+
+    if not os.path.isdir(parent):
+        return None
+
+    # --- Collect candidates ---
+    collected = []
+    for name in os.listdir(parent):
+        if not name.startswith(name_prefix):
+            continue
+        path = os.path.join(parent, name)
+        if not os.path.isdir(path):
+            continue
+
+        # to remove * from string according to the expected folders tree
+        filled_format = fill_star_with_format(path_format)
+
+        ts = extract_timestamp(path, fmt=filled_format)
+
+        collected.append((ts, os.path.abspath(path)))
+
+    candidates = []
+    for c in collected:
+        if c[0] is not None:
+            candidates.append(c)
+        else:
+            pass
+
+    candidates.sort(key=lambda t: t[0])
+
+    # --- Sort and ensure unique timestamps ---
+    time_obj = {}
+    for ts, path in candidates:
+        if ts not in list(time_obj.keys()):
+            time_obj[ts] = path
+
+    time_obj = dict(sorted(time_obj.items(), reverse=ascending))
+
+    return time_obj
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------------------------------------------------
+# method to fill star by the time tag
+def fill_star_with_format(pattern: str) -> str:
+    """
+    Replace '*' in a date-like pattern with the appropriate strftime tag
+    (%Y, %m, %d, %H) inferred by its position.
+    """
+    parts = pattern.split('/')
+    for i, part in enumerate(parts):
+        if '*' in part:
+            if i == 0:
+                parts[i] = part.replace('*', '%Y')
+            elif i == 1:
+                parts[i] = part.replace('*', '%m')
+            elif i == 2:
+                parts[i] = part.replace('*', '%d')
+            else:
+                # time component, like "*00"
+                parts[i] = part.replace('*', '%H')
+    return '/'.join(parts)
 # ----------------------------------------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------------------------------------------------------------------

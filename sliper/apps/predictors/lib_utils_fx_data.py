@@ -3,25 +3,54 @@ Library Features:
 
 Name:          lib_utils_fx_data
 Author(s):     Fabio Delogu (fabio.delogu@cimafoundation.org)
-Date:          '20220320'
-Version:       '1.0.0'
+Date:          '20251010'
+Version:       '1.1.0'
 """
 
-# -------------------------------------------------------------------------------------
-# Library
+# ----------------------------------------------------------------------------------------------------------------------
+# libraries
 import logging
 import pandas as pd
-
-from copy import deepcopy
+import numpy as np
 
 from lib_info_args import logger_name
 
-# Option(s)
+# set options
 pd.options.mode.chained_assignment = None
 
-# Logging
+# logging
 log_stream = logging.getLogger(logger_name)
-# -------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------------------------------------------------
+# method to ensure data attributes
+def ensure_data_attrs(df: pd.DataFrame, attrs: dict = None) -> pd.DataFrame:
+
+    attrs_cleaned = {k: v for k, v in attrs.items() if k not in ("__comment__", "_comment_", "_comment", "comment_")}
+
+    if attrs:
+        df.attrs = attrs_cleaned
+    return df
+# ----------------------------------------------------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------------------------------------------------
+# method to ensure data valid
+def ensure_data_valid(df: pd.DataFrame,
+                      no_data_numeric: float = -9999, no_data_string: str = "NoData",
+                      tags: list[str] = ["rain", "sm"]) -> pd.DataFrame:
+
+    # Replace both string and numeric no-data markers with NaN
+    df = df.replace(no_data_string, np.nan)
+    df = df.replace(no_data_numeric, np.nan)
+
+    # Select only columns that start with the given tags
+    tag_cols = [c for c in df.columns if any(c.startswith(tag) for tag in tags)]
+
+    # Drop rows where any of those tagged columns are NaN
+    df_cleaned = df.dropna(subset=tag_cols, how='any')
+
+    return df_cleaned
+# ----------------------------------------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------------------------------------------------------------------
 # method to ensure 'day_of the year' is the index of the dataframe

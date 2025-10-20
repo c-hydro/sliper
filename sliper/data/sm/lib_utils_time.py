@@ -3,132 +3,156 @@ Library Features:
 
 Name:          lib_utils_time
 Author(s):     Fabio Delogu (fabio.delogu@cimafoundation.org)
-Date:          '20211208'
-Version:       '1.0.0'
+Date:          '20251003'
+Version:       '1.5.0'
 """
 
-#######################################################################################
-# Libraries
+# ----------------------------------------------------------------------------------------------------------------------
+# libraries
 import logging
-import re
 import pandas as pd
 
-from datetime import date
-from copy import deepcopy
+from datetime import datetime
 
 from lib_info_args import logger_name
 
-# Logging
+# logging
 log_stream = logging.getLogger(logger_name)
-#######################################################################################
+# ----------------------------------------------------------------------------------------------------------------------
 
 
-# -------------------------------------------------------------------------------------
-# Method to set time run
-def set_time(time_run_args=None, time_run_file=None, time_format='%Y-%m-%d %H:$M',
-             time_run_file_start=None, time_run_file_end=None,
-             time_period=1, time_frequency='H', time_rounding='H', time_reverse=True):
+# ----------------------------------------------------------------------------------------------------------------------
+# method to set time run
+def set_time(
+    # choose the reference time
+    time_run_args: str | pd.Timestamp | datetime | None = None,
+    time_run_file: str | pd.Timestamp | datetime | None = None,
+    time_format: str = "%Y-%m-%d %H:%M",
 
-    log_stream.info(' ----> Set time period ... ')
-    if (time_run_file_start is None) and (time_run_file_end is None):
+    # explicit window (overrides periods if both provided)
+    time_run_file_start: str | pd.Timestamp | datetime | None = None,
+    time_run_file_end: str | pd.Timestamp | datetime | None = None,
 
-        log_stream.info(' -----> Time info defined by "time_run" argument ... ')
+    # periods in units of freq (e.g., 'h' -> hours)
+    time_period_obs: int = 1,   # steps ending at time_run (inclusive)
+    time_period_frc: int = 0,   # steps strictly after time_run
 
-        if time_run_args is not None:
-            time_run = time_run_args
-            log_stream.info(' ------> Time ' + time_run + ' set by argument')
-        elif (time_run_args is None) and (time_run_file is not None):
-            time_run = time_run_file
-            log_stream.info(' ------> Time ' + time_run + ' set by user')
-        elif (time_run_args is None) and (time_run_file is None):
-            time_now = date.today()
-            time_run = time_now.strftime(time_format)
-            log_stream.info(' ------> Time ' + time_run + ' set by system')
+    # grid frequency
+    freq: str = "h",
+
+    # snap boundaries to midnight if requested: "none" | "prev" | "next"
+    align_start_to_midnight: str = "prev",
+    align_end_to_midnight: str = "next",
+
+    # other
+    tz: str | None = None,
+):
+    """
+    Returns:
+        time_run   (pd.Timestamp)     -> reference time aligned to 'freq'
+        time_range (pd.DatetimeIndex) -> range at 'freq' across [start, end]
+
+    Rules:
+      • OBS steps include time_run; FRC steps start right after time_run.
+      • If start/end provided, they define the window; you can still snap to midnight.
+    """
+    # ---- helpers ----
+    def _to_ts(x):
+        if isinstance(x, pd.Timestamp):
+            ts = x
+        elif isinstance(x, datetime):
+            ts = pd.Timestamp(x)
+        elif isinstance(x, str):
+            try:
+                ts = pd.to_datetime(x, format=time_format)
+            except Exception:
+                ts = pd.to_datetime(x)
+        elif x is None:
+            return None
         else:
-            log_stream.info(' ----> Set time period ... FAILED')
-            log_stream.error(' ===> Argument "time_run" is not correctly set')
-            raise IOError('Time type or format is wrong')
+            raise TypeError(f"Unsupported time type: {type(x)}")
+        if tz is not None:
+            ts = ts.tz_localize(tz) if ts.tzinfo is None else ts.tz_convert(tz)
+        return ts
 
-        time_tmp = pd.Timestamp(time_run)
-        time_run = time_tmp.floor(time_rounding)
+    def _coerce_nonneg(v, default):
+        try:
+            iv = int(v)
+            return max(iv, 0)
+        except Exception:
+            return default
 
-        if time_period > 0:
-            time_range = pd.date_range(end=time_run, periods=time_period, freq=time_frequency)
-        else:
-            log_stream.warning(' ===> TimePeriod must be greater then 0. TimePeriod is set automatically to 1')
-            time_range = pd.DatetimeIndex([time_run], freq=time_frequency)
+    def _midnight(ts): return ts.floor("D")
+    def _snap(ts, mode):
+        if mode == "none": return ts
+        if mode == "prev": return _midnight(ts)
+        if mode == "next": return _midnight(ts) + pd.Timedelta(days=1)
+        raise ValueError('align_*_to_midnight must be "none", "prev", or "next"')
 
-        log_stream.info(' -----> Time info defined by "time_run" argument ... DONE')
+    try:
+        step = pd.tseries.frequencies.to_offset(freq)
+    except Exception:
+        step = pd.Timedelta(hours=1)  # robust fallback
 
-    elif (time_run_file_start is not None) and (time_run_file_end is not None):
+    # sanitize periods
+    time_period_obs = _coerce_nonneg(time_period_obs, 1)
+    time_period_frc = _coerce_nonneg(time_period_frc, 0)
 
-        log_stream.info(' -----> Time info defined by "time_start" and "time_end" arguments ... ')
+    # ---- Branch A: explicit start/end ----
+    if (time_run_file_start is not None) and (time_run_file_end is not None):
+        ts_start = _to_ts(time_run_file_start)
+        ts_end   = _to_ts(time_run_file_end)
+        if ts_start is None or ts_end is None:
+            raise IOError('Time type or format is wrong for start/end')
+        if ts_end < ts_start:
+            raise ValueError("time_run_file_end must be >= time_run_file_start")
 
-        time_run_file_start = pd.Timestamp(time_run_file_start)
-        time_run_file_start = time_run_file_start.floor(time_rounding)
-        time_run_file_end = pd.Timestamp(time_run_file_end)
-        time_run_file_end = time_run_file_end.floor(time_rounding)
+        # align to grid
+        start = ts_start if ts_start == ts_start.floor(freq) else ts_start.ceil(freq)
+        end   = ts_end.floor(freq)
 
-        time_now = date.today()
-        time_run = time_now.strftime(time_format)
-        time_run = pd.Timestamp(time_run)
-        time_run = time_run.floor(time_rounding)
-        time_range = pd.date_range(start=time_run_file_start, end=time_run_file_end, freq=time_frequency)
+        # optional snapping
+        start = _snap(start, align_start_to_midnight)
+        end   = _snap(end, align_end_to_midnight)
 
-        log_stream.info(' -----> Time info defined by "time_start" and "time_end" arguments ... DONE')
+        if end < start:
+            end = start
 
+        # choose representative time_run as the last grid step
+        time_run = end.floor(freq)
+
+        time_range = pd.date_range(start=start, end=end, freq=freq, tz=start.tz)
+        return time_run, time_range
+
+    # ---- Branch B: relative to time_run ----
+    # pick time_run (args > file > now)
+    if time_run_args is not None:
+        time_run = _to_ts(time_run_args)
+    elif time_run_file is not None:
+        time_run = _to_ts(time_run_file)
     else:
-        log_stream.info(' ----> Set time period ... FAILED')
-        log_stream.error(' ===> Arguments "time_start" and/or "time_end" is/are not correctly set')
-        raise IOError('Time type or format is wrong')
+        time_run = pd.Timestamp.now(tz) if tz else pd.Timestamp.now()
 
-    time_chunks = set_chunks(time_range)
+    # align to freq grid
+    time_run = time_run.floor(freq)
 
-    if time_reverse:
-        time_range = time_range[::-1]
-        time_tmp, time_chunks = deepcopy(time_chunks), {}
-        for time_step in reversed(list(time_tmp.keys())):
-            time_chunks[time_step] = time_tmp[time_step][::-1]
-
-    log_stream.info(' ----> Set time period ... DONE')
-
-    return time_run, time_range, time_chunks
-
-# -------------------------------------------------------------------------------------
-
-
-# -------------------------------------------------------------------------------------
-# Method to set chunks
-def set_chunks(time_range, time_delta='3H'):
-
-    time_steps, time_freq = split_time_parts(time_delta)
-
-    if time_range.__len__() > time_steps:
-        time_pvt_delta = deepcopy(time_delta)
-        time_pvt_range = pd.date_range(start=time_range[0], end=time_range[-1], freq=time_pvt_delta)
+    if time_period_obs == 0 and time_period_frc == 0:
+        start = end = time_run
     else:
-        time_pvt_range = deepcopy(time_range)
-        time_steps = 1
-        time_freq = time_range.freqstr
+        # OBS block includes time_run; if obs>0, first step is time_run - (obs-1)*step
+        start = time_run - (time_period_obs - 1) * step if time_period_obs > 0 else time_run + (step if time_period_frc > 0 else pd.Timedelta(0))
+        # FRC block end is time_run + frc*step (time_run excluded)
+        end = time_run + time_period_frc * step if time_period_frc > 0 else time_run
 
-    time_chunks = {}
-    for time_pvt_step in reversed(time_pvt_range):
-        time_prd_pvt_tmp = pd.date_range(start=time_pvt_step, periods=time_steps, freq=time_freq)
-        time_prd_pvt_flt = time_prd_pvt_tmp[(time_prd_pvt_tmp >= time_range[0]) & (time_prd_pvt_tmp <= time_range[-1])]
-        time_chunks[time_pvt_step] = time_prd_pvt_flt
+    # optional snapping to midnight
+    start = _snap(start, align_start_to_midnight)
+    end   = _snap(end, align_end_to_midnight)
 
-    return time_chunks
-# -------------------------------------------------------------------------------------
+    if end < start:
+        # if snapping inverted the window, collapse to boundary
+        end = start
 
+    time_range = pd.date_range(start=start, end=end, freq=freq, tz=start.tz)
+    return time_run, time_range
 
-# -------------------------------------------------------------------------------------
-# Method to split time delta
-def split_time_parts(time_delta):
-    time_period = re.findall(r'\d+', time_delta)
-    if time_period.__len__() > 0:
-        time_period = int(time_period[0])
-    else:
-        time_period = 1
-    time_frequency = re.findall("[a-zA-Z]+", time_delta)[0]
-    return time_period, time_frequency
-# -------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------

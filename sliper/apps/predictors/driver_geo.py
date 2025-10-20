@@ -69,7 +69,7 @@ class DriverGeo:
     def wrap_geo_data(self, file_name: str, file_type: str, file_format: str, file_mandatory: bool = True):
 
         # info start
-        log_stream.info(' -----> Get source ... ')
+        log_stream.info(' -----> Compute geo data ... ')
 
         # check data availability
         if os.path.exists(file_name):
@@ -102,7 +102,7 @@ class DriverGeo:
                 geo_obj = None
 
         # info end
-        log_stream.info(' -----> Get source ... DONE')
+        log_stream.info(' -----> Compute geo data ... DONE')
 
         return geo_obj
 
@@ -112,8 +112,8 @@ class DriverGeo:
     # Method to organize geographical data
     def organize_data(self):
 
-        # Ending info
-        log_stream.info(' ----> Organize alert area geographical data ... DONE')
+        # info start
+        log_stream.info(' ----> Organize alert area geographical data ... ')
 
         # define path name destination
         path_name_dst = fill_template_string(
@@ -147,6 +147,9 @@ class DriverGeo:
             # read geo data from file
             geo_collections = read_obj(path_name_dst)
             geo_info = geo_collections['info']
+
+        # info end
+        log_stream.info(' ----> Organize alert area geographical data ... DONE')
 
         return geo_info
     # ------------------------------------------------------------------------------------------------------------------

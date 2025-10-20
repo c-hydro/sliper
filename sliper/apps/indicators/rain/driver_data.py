@@ -134,12 +134,12 @@ class DriverData:
 
         self.group_time_periods = divide_time_range(
             time_range,
-            ref_time=time_run, ref_frequency='H',
+            ref_time=time_run, ref_frequency='H', ref_rounding='D',
             observed_hours=self.group_time_types['search_period_left'],
             forecast_hours=self.group_time_types['search_period_right'],
             observed_partition=self.group_time_partition['search_partition_left'],
             forecast_partition=self.group_time_partition['search_partition_right'],
-            observed_label='Observed', forecast_label='Forecast')
+            observed_label='Observed', forecast_label='Forecast', mixed_label='Observed_Forecast')
 
     # ------------------------------------------------------------------------------------------------------------------
 
@@ -172,9 +172,11 @@ class DriverData:
             path_name_dst = fill_template_string(
                 template_str=deepcopy(self.path_name_dst),
                 template_map=self.tags_dict,
-                value_map={'destination_sub_path_time': time_run, "destination_datetime_run": time_run,
-                           'destination_datetime_start': time_start, 'destination_datetime_end': time_end,
-                           'alert_area_name': group_key})
+                value_map={
+                    'run_sub_path_time': time_run, 'run_datetime': time_run,
+                    'destination_sub_path_time': time_run, "destination_datetime_run": time_run,
+                    'destination_datetime_start': time_start, 'destination_datetime_end': time_end,
+                    'alert_area_name': group_key})
 
             # apply flags (to update datasets source and destination)
             if self.flag_update_anc_grid:
@@ -199,6 +201,7 @@ class DriverData:
                     period_id = sub_time_periods['period_id']
                     period_time_key = sub_time_periods['time_key']
                     period_time_start, period_time_end = sub_time_periods['time_start'], sub_time_periods['time_end']
+                    period_time_pivot = sub_time_periods['time_pivot']
                     period_time_range = sub_time_periods['time_range']
 
                     # info source data start
@@ -219,10 +222,12 @@ class DriverData:
                     group_dict = fields2dict(
                         group_obj,
                         extra_fields={
-                            'time_run': period_time_key, 'time_start': period_time_start, 'time_end': period_time_end,
+                            'time_run': period_time_key, 'time_pivot': period_time_pivot,
+                            'time_start': period_time_start, 'time_end': period_time_end,
                             'period_tag': period_tag, 'period_type': period_type, 'period_id': period_id},
                         extra_formats={
-                            'time_run': '%Y-%m-%d', 'time_start': '%Y-%m-%d %H:%M', 'time_end': '%Y-%m-%d %H:%M'})
+                            'time_run': '%Y-%m-%d', 'time_pivot': '%Y-%m-%d %H:%M',
+                            'time_start': '%Y-%m-%d %H:%M', 'time_end': '%Y-%m-%d %H:%M'})
 
                     # create a DataFrame with the group data
                     group_timestamp = pd.Timestamp(period_time_key)
@@ -300,8 +305,10 @@ class DriverData:
             path_name_anc_ts = fill_template_string(
                 template_str=deepcopy(self.path_name_anc_ts),
                 template_map=self.tags_dict,
-                value_map={'ancillary_sub_path_time': time_run, "ancillary_datetime_run": time_run,
-                           "ancillary_datetime_start": period_time_start, "ancillary_datetime_end": period_time_end})
+                value_map={
+                    'run_sub_path_time': time_run, 'run_datetime': time_run,
+                    'ancillary_sub_path_time': time_run, "ancillary_datetime_run": time_run,
+                    "ancillary_datetime_start": period_time_start, "ancillary_datetime_end": period_time_end})
 
             # apply flags (to update datasets source and destination)
             if self.flag_update_anc_ts:
@@ -334,6 +341,8 @@ class DriverData:
                     if period_type == 'Observed':
                         var_time_window = group_time_windows['left']
                     elif period_type == 'Forecast':
+                        var_time_window = group_time_windows['right']
+                    elif period_type == 'Observed_Forecast':
                         var_time_window = group_time_windows['right']
                     else:
                         # error message (period type is not allowed)
@@ -515,15 +524,19 @@ class DriverData:
             path_name_anc_grid = fill_template_string(
                 template_str=deepcopy(self.path_name_anc_grid),
                 template_map=self.tags_dict,
-                value_map={'ancillary_sub_path_time': time_run, "ancillary_datetime_run": time_run,
-                           "ancillary_datetime_start": period_time_start, "ancillary_datetime_end": period_time_end})
+                value_map={
+                    'run_sub_path_time': time_run, 'run_datetime': time_run,
+                    'ancillary_sub_path_time': time_run, "ancillary_datetime_run": time_run,
+                    "ancillary_datetime_start": period_time_start, "ancillary_datetime_end": period_time_end})
 
             # define ancillary path names (ts)
             path_name_anc_ts = fill_template_string(
                 template_str=deepcopy(self.path_name_anc_ts),
                 template_map=self.tags_dict,
-                value_map={'ancillary_sub_path_time': time_run, "ancillary_datetime_run": time_run,
-                           "ancillary_datetime_start": period_time_start, "ancillary_datetime_end": period_time_end})
+                value_map={
+                    'run_sub_path_time': time_run, 'run_datetime': time_run,
+                    'ancillary_sub_path_time': time_run, "ancillary_datetime_run": time_run,
+                    "ancillary_datetime_start": period_time_start, "ancillary_datetime_end": period_time_end})
 
             # apply flags (to update datasets source and destination)
             if self.flag_update_anc_grid:
@@ -552,7 +565,9 @@ class DriverData:
                     path_name_src = fill_template_string(
                         template_str=deepcopy(self.path_name_src),
                         template_map=self.tags_dict,
-                        value_map={'source_sub_path_time': period_time_step, "source_datetime": period_time_step})
+                        value_map={
+                            'run_sub_path_time': time_run, 'run_datetime': time_run,
+                            'source_sub_path_time': period_time_step, "source_datetime": period_time_step})
 
                     # check if path name source exists
                     if not os.path.exists(path_name_src):

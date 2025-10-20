@@ -1,0 +1,144 @@
+{
+  "algorithm": {
+    "general": {
+      "title": "Viewing tool for soil slips time-series",
+      "web-site": "",
+      "source": "Python library developed by CIMA Research Foundation",
+      "history": "1.5.0 [20250731]",
+      "project-info": "sliper",
+      "algorithm": "Algorithm developed by CIMA Research Foundation"
+    },
+    "flags": {
+      "update_static": false,
+      "update_dynamic_source": false,
+      "update_dynamic_destination": true
+    },
+    "template": {
+      "registry_name": "string_registry_name",
+      "registry_code": "string_registry_code",
+      "run_datetime": "%Y%m%d%H00",
+      "run_sub_path_time": "%Y/%m/%d/",
+      "source_sub_path_time": "%Y/%m/%d/",
+      "source_datetime": "%Y%m%d0000",
+      "ancillary_sub_path_time": "%Y/%m/%d/",
+      "ancillary_datetime": "%Y%m%d",
+      "destination_sub_path_time": "%Y/%m/%d/",
+      "destination_datetime": "%Y%m%d"
+    }
+  },
+  "data": {
+    "static": {
+        "source": {
+          "info": {
+            "folder_name": "/home/admin/soilslips-ws/data_static/alert_area/",
+            "file_name": "alert_area_info.csv",
+            "type": "vector",
+            "format": "csv"
+          },
+          "shapefile": {
+            "folder_name": "/home/admin/soilslips-ws/data_static/alert_area/",
+            "file_name": "alert_area_epsg4326.shp",
+            "type": "vector",
+            "format": "shapefile"
+          }
+        },
+        "destination": {
+          "folder_name": "/home/admin/soilslips-ws/data_static/ancillary/analysis/geo/",
+          "file_name": "geo_info_viewer_ts.workspace",
+          "type": "vector",
+          "format": "workspace"
+      }
+    },
+    "dynamic": {
+      "source": {
+        "folder_name": "/home/admin/soilslips-ws/data_dynamic/destination/predictors/obs/{run_sub_path_time}",
+        "file_name": "predictors_{run_datetime}_{registry_name}.csv",
+        "type": "vector",
+        "format": "csv",
+        "delimiter": ";",
+        "fields": {
+          "sm": "sm_value_first",
+          "sm_period_type": "sm_period_type",
+          "rain_peak": "rain_peak_3H",
+          "rain_accumulated": "rain_accumulated_12H",
+          "rain_period_type": "rain_period_type",
+          "slips_obs_events": "soil_slips_obs_n",
+          "slips_pred_events": "soil_slips_pred_n",
+          "slips_obs_alert_level": "soil_slips_obs_alert_level",
+          "slips_obs_alert_color": "soil_slips_obs_alert_color",
+          "slips_pred_alert_level": "soil_slips_pred_alert_level",
+          "slips_pred_alert_color": "soil_slips_pred_alert_color",
+          "domain": "domain",
+          "time": "time"
+        }
+      },
+      "ancillary": {
+        "folder_name": "/home/admin/soilslips-ws/analysis/ancillary/ts/obs/{run_sub_path_time}",
+        "file_name": "predictors_{run_datetime}_{registry_name}.workspace"
+      },
+      "destination": {
+        "folder_name": "/home/admin/soilslips-ws/analysis/img/ts/obs/{run_sub_path_time}",
+        "file_name": "predictors_{run_datetime}_{registry_name}.jpeg",
+        "type": "figure",
+        "format": "jpeg",
+        "delimiter": null,
+        "fields": {
+          "sm": "sm",
+          "rain_peak": "rain_peak_3H",
+          "rain_accumulated": "rain_accumulated_12H",
+          "slips_obs_events": "soil_slips_observed_n",
+          "slips_pred_events": "soil_slips_prediction_n",
+          "slips_obs_alert_level": "soil_slips_observed_alert_level",
+          "slips_pred_alert_level": "soil_slips_prediction_alert_level",
+          "domain": "domain",
+          "time": "time"
+        },
+        "settings": {
+          "title": "SoilSlips - Time Series \n Domain: {alert_area_name} -- Period: {time_start} - {time_end} ",
+          "label_axis_x_soil_moisture": "time [days]",
+          "label_axis_y_soil_moisture": "soil moisture [%]",
+          "label_axis_x_rain": "time [days]",
+          "label_axis_y_rain": "rain [mm]",
+          "legend": {
+            "sm": "soil moisture",
+            "rain_peak": "rain peak [3h]",
+            "rain_accumulated": "rain acc [12h]",
+            "slips_obs_events": "obs n [-]",
+            "slips_pred_events": "pred n [-]",
+            "slips_obs_alert_level": "obs warning level",
+            "slips_pred_alert_level": "pred warning level"
+          },
+          "style": {
+            "sm": {"marker": null, "color": "green", "linestyle": "-", "lw": 2, "ms": 4, "alpha": 1.0},
+            "rain_peak": {"marker": "o", "color": "blue", "linestyle": null, "lw": 0, "ms": 5, "alpha": 1.0},
+            "rain_accumulated": {"marker": null, "color": null, "linestyle": null, "lw": null, "ms": null, "alpha": 0.8},
+            "slips_obs_events": {"marker": null, "color": null, "linestyle": null, "lw": 0, "ms": null, "alpha": 1.0},
+            "slips_pred_events": {"marker": null, "color": null, "linestyle": null, "lw": 0, "ms": null, "alpha": 1.0},
+            "slips_obs_alert_level": {"marker": "o", "color": "green", "linestyle": "-", "lw": 0, "ms": 5, "alpha": 0.9},
+            "slips_pred_alert_level": {"marker": "x", "color": "red", "linestyle": "-", "lw": 0, "ms": 6, "alpha": 1.0}
+          }
+        }
+      }
+    }
+  },
+  "tmp": {
+    "folder_name": "/home/admin/tmp/analysis/",
+    "file_name": null
+  },
+  "log": {
+    "folder_name": "/home/admin/log/analysis",
+    "file_name": "sliper_viewer_ts_obs_realtime.txt"
+  },
+  "time": {
+    "time_run": null,
+    "time_start": null,
+    "time_end": null,
+    "time_period": {"obs": 30, "frc": 0},
+    "time_frequency": "D",
+    "time_rounding": "h",
+    "time_start_align_to_midnight": "prev",
+    "time_end_align_to_midnight": "none",
+    "time_reverse": true
+    
+  }
+}

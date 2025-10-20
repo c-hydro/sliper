@@ -2,8 +2,8 @@
 """
 SLIPER APP - PREDICTORS PROCESSING - Soil Landslide Information and Prediction & Early Response
 
-__date__ = '20250724'
-__version__ = '1.4.0'
+__date__ = '20251008'
+__version__ = '1.5.0'
 __author__ =
         'Stefania Magri (stefania.magri@arpal.liguria.it',
         'Mauro Quagliati (mauro.quagliati@arpal.liguria.it',
@@ -16,6 +16,7 @@ General command line:
 python sliper_app_predictors_main.py -settings_file configuration.json -time "YYYY-MM-DD HH:MM"
 
 Version(s):
+20251008 (1.5.0) --> Operational release; ensure realtime setup and fix bugs related
 20250724 (1.4.0) --> Refactor to the sliper package
 20221013 (1.3.0) --> Bugs fix to the kernel fx
 20220517 (1.2.0) --> Bugs fix and methods refactor
@@ -49,8 +50,8 @@ log_stream = logging.getLogger(logger_name)
 project_name = 'sliper'
 alg_name = 'SLIPER APP - PREDICTORS PROCESSING'
 alg_type = 'Package'
-alg_version = '1.4.0'
-alg_release = '2025-07-24'
+alg_version = '1.5.0'
+alg_release = '2025-10-08'
 # -------------------------------------------------------------------------------------
 
 

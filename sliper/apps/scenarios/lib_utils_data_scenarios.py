@@ -11,7 +11,12 @@ Version:       '1.0.0'
 import logging
 import warnings
 import os
+import re
+
 import pandas as pd
+import numpy as np
+
+from datetime import timedelta, time
 
 from typing import Optional
 from copy import deepcopy
@@ -22,6 +27,226 @@ from lib_info_args import logger_name
 
 # logging
 log_stream = logging.getLogger(logger_name)
+# ----------------------------------------------------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------------------------------------------------
+# method to analyze time summary
+def analyze_time_summary(dict_data, mode='newest', tag='folder_name_tag'):
+
+    """
+    Extract the newest or oldest 'time_tag' timestamp from a nested dictionary.
+    Always returns a pandas.Timestamp.
+
+    Parameters
+    ----------
+    dict_data : dict
+        Dictionary of the form:
+        {key_date: {'time_ref': Timestamp, 'time_tag': Timestamp}, ...}
+    mode : str, optional
+        Either 'newest' or 'oldest' (default: 'newest')
+
+    Returns
+    -------
+    pd.Timestamp or None
+        The newest or oldest 'time_tag' found, or None if empty.
+    """
+    if not dict_data:
+        return None
+
+    # Collect time_tag values and ensure they are Timestamps
+    time_tags = []
+    for v in dict_data.values():
+        if tag in v and v[tag] is not None:
+            time_tags.append(pd.Timestamp(v[tag]))
+
+    if not time_tags:
+        return None
+
+    # Choose mode
+    if mode == 'newest':
+        return pd.Timestamp(max(time_tags))
+    elif mode == 'oldest':
+        return pd.Timestamp(min(time_tags))
+    else:
+        raise ValueError("mode must be either 'newest' or 'oldest'")
+# ----------------------------------------------------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------------------------------------------------
+# method to ensure that time as index
+def ensure_time_index(dframe: pd.DataFrame, time_col: str ='time') -> pd.DataFrame:
+
+    # Ensure 'time' is a proper index
+    if time_col not in dframe.columns:
+        raise KeyError(f"Column {time_col} not found in analysis_collections.")
+
+    if dframe.index.name != 'time':
+        # Convert to datetime if not already
+        dframe[time_col] = pd.to_datetime(dframe['time'], errors='coerce')
+        if dframe[time_col].isnull().any():
+            raise ValueError(f"Column {time} contains invalid datetime values.")
+        # Set as index
+        dframe = dframe.set_index('time')
+
+    return dframe
+# ----------------------------------------------------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------------------------------------------------
+# method to add missing days to df
+def add_missing_days_with_nodata(
+    df,
+    start_date=None,
+    end_date=None,
+    date_col="time",
+    no_data_numeric=-9999,
+    no_data_string="NoData",
+    time_start=pd.Timestamp("01:00").time(),
+    time_end=pd.Timestamp("00:00").time(),  # can be None
+    # --- new options ---
+    run_time_cols=None,    # e.g. ["rain_time_run"]
+    start_time_cols=None,  # e.g. ["rain_time_start", "something_time_start"]
+    end_time_cols=None,    # e.g. ["rain_time_end", "something_time_end"]
+    detect_time_cols=True, # auto-detect *_time_run/start/end if lists above are None
+    suffixes=("time_run", "time_start", "time_end"),  # detection targets
+):
+    """
+    Add missing daily steps between start_date and end_date with user-defined NoData values.
+    Automatically fills any *_time_run, *_time_start, *_time_end (or exact matches)
+    unless explicit column lists are provided.
+
+    Logic:
+    - If both start_date and end_date are None → return the original df unchanged.
+    - If start_date is None → use the first date in df for the start.
+    - If end_date is None → use the last date in df for the end.
+    - If time_end is None → infer from existing *_time_end columns.
+
+    - *_time_run   -> YYYY-MM-DD
+    - *_time_start -> YYYY-MM-DD HH:MM   (time_start)
+    - *_time_end   -> YYYY-MM-DD HH:MM   (next day with inferred or provided time_end)
+    """
+
+    # --- early exit if both bounds missing ---
+    if start_date is None and end_date is None:
+        return df.copy()
+
+    df2 = df.copy()
+
+    # normalize date column to date
+    df2[date_col] = pd.to_datetime(df2[date_col]).dt.date
+
+    # infer missing bounds from existing data
+    if start_date is None:
+        start_date = df2[date_col].min()
+    if end_date is None:
+        end_date = df2[date_col].max()
+
+    # Create complete daily range
+    full_range = pd.date_range(start=start_date, end=end_date, freq="D").date
+
+    # Column typing
+    numeric_cols = df2.select_dtypes(include=[np.number]).columns.tolist()
+    other_cols = [c for c in df2.columns if c not in numeric_cols and c != date_col]
+
+    # ---- discover time columns (unless explicitly provided) ----
+    def _endswith_or_equal(col, suffix):
+        return col == suffix or col.endswith("_" + suffix)
+
+    all_cols = set(df2.columns)
+
+    if run_time_cols is None and detect_time_cols:
+        run_time_cols = [c for c in all_cols if _endswith_or_equal(c, suffixes[0])]
+    if start_time_cols is None and detect_time_cols:
+        start_time_cols = [c for c in all_cols if _endswith_or_equal(c, suffixes[1])]
+    if end_time_cols is None and detect_time_cols:
+        end_time_cols = [c for c in all_cols if _endswith_or_equal(c, suffixes[2])]
+
+    run_time_cols = list(run_time_cols or [])
+    start_time_cols = list(start_time_cols or [])
+    end_time_cols = list(end_time_cols or [])
+
+    # ---- helpers ----
+    hhmm_re = re.compile(r"(\d{2}):(\d{2})")
+
+    def _to_time_obj(x):
+        if pd.isna(x):
+            return None
+        if isinstance(x, time):
+            return x
+        try:
+            ts = pd.to_datetime(x, errors="coerce")
+            if ts is not pd.NaT:
+                return ts.time()
+        except Exception:
+            pass
+        if isinstance(x, str):
+            m = hhmm_re.search(x)
+            if m:
+                try:
+                    return time(int(m.group(1)), int(m.group(2)))
+                except ValueError:
+                    return None
+        return None
+
+    # ---- infer per-column time_end if needed ----
+    inferred_end_times = {}
+    if time_end is None:
+        for c in end_time_cols:
+            if c in df2.columns:
+                candidates = df2[c][(~df2[c].isna()) & (df2[c].astype(str) != str(no_data_string))]
+                t_obj = None
+                for val in candidates:
+                    t_obj = _to_time_obj(val)
+                    if t_obj is not None:
+                        break
+                inferred_end_times[c] = t_obj or time(0, 0)
+        if not inferred_end_times:
+            inferred_end_times["_default_"] = time(0, 0)
+    else:
+        if not isinstance(time_end, time):
+            te = _to_time_obj(time_end)
+            time_end = te if te is not None else time(0, 0)
+
+    # ---- row factory for missing days ----
+    def nodata_row(d):
+        d_str = d.strftime("%Y-%m-%d")
+        time_start_str = f"{d_str} {time_start.strftime('%H:%M')}"
+
+        row = {date_col: d}
+
+        # numeric: fill with numeric nodata
+        for c in numeric_cols:
+            row[c] = no_data_numeric
+
+        # others: default to string nodata
+        for c in other_cols:
+            row[c] = no_data_string
+
+        for c in run_time_cols:
+            if c in all_cols:
+                row[c] = d_str
+        for c in start_time_cols:
+            if c in all_cols:
+                row[c] = time_start_str
+        for c in end_time_cols:
+            if c in all_cols:
+                if time_end is None:
+                    t_for_c = inferred_end_times.get(c, inferred_end_times.get("_default_", time(0, 0)))
+                else:
+                    t_for_c = time_end
+                next_day = d + timedelta(days=1)
+                row[c] = f"{next_day.strftime('%Y-%m-%d')} {t_for_c.strftime('%H:%M')}"
+        return row
+
+    # build missing rows
+    existing_dates = set(df2[date_col])
+    new_rows = [nodata_row(d) for d in full_range if d not in existing_dates]
+
+    if new_rows:
+        df2 = pd.concat([df2, pd.DataFrame(new_rows)], ignore_index=True)
+
+    df2 = df2.sort_values(by=date_col).reset_index(drop=True)
+    df2[date_col] = df2[date_col].astype(str)
+    return df2
+
 # ----------------------------------------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -44,41 +269,22 @@ def analyze_data_alignment(
             - 'missing': dict of missing timestamps
             - 'stats': dict with expected/found/completeness per dataset
     """
-    import pandas as pd
 
     # Step 1: Ensure datetime and sort
     for df in [df1, df2, df3]:
-        df[time_col] = pd.to_datetime(df[time_col])
-        df.sort_values(by=time_col, inplace=True)
+        if df is not None and not df.empty:
+            df[time_col] = pd.to_datetime(df[time_col])
+            df.sort_values(by=time_col, inplace=True)
 
-    # Step 2: Select which DataFrames to include in time alignment
-    periods = []
-    if use1:
-        periods.append((df1[time_col].min(), df1[time_col].max()))
-    if use2:
-        periods.append((df2[time_col].min(), df2[time_col].max()))
-    if use3:
-        periods.append((df3[time_col].min(), df3[time_col].max()))
+    # Helper to find missing & stats against an expected_range
+    def find_missing_and_stats(df, start, end, expected_range):
+        if df is None or df.empty:
+            found = 0
+            expected = len(expected_range)
+            missing = expected_range  # everything missing
+            percent = 0.0 if expected > 0 else 0.0
+            return missing, expected, found, percent
 
-    if not periods:
-        raise ValueError("At least one dataset must be included to determine the common time period.")
-
-    # Step 3: Find common start and end
-    start = max(start for start, _ in periods)
-    end = min(end for _, end in periods)
-
-    if start >= end:
-        raise ValueError("No overlapping time range between the selected datasets.")
-
-    # Step 4: Determine frequency
-    if not freq:
-        freq = pd.infer_freq(df1[time_col])
-        if freq is None:
-            freq = 'D'  # fallback default
-    expected_range = pd.date_range(start=start, end=end, freq=freq)
-
-    # Step 5: Find missing timestamps and compute stats
-    def find_missing_and_stats(df):
         trimmed = df[(df[time_col] >= start) & (df[time_col] <= end)]
         found = trimmed[time_col].nunique()
         expected = len(expected_range)
@@ -86,13 +292,66 @@ def analyze_data_alignment(
         percent = round((found / expected) * 100, 2) if expected > 0 else 0.0
         return missing, expected, found, percent
 
-    missing1, exp1, found1, perc1 = find_missing_and_stats(df1)
-    missing2, exp2, found2, perc2 = find_missing_and_stats(df2)
-    missing3, exp3, found3, perc3 = find_missing_and_stats(df3)
+    # Step 2: Select which DataFrames to include in time alignment (only non-empty + selected)
+    periods = []
+    if use1 and df1 is not None and not df1.empty:
+        periods.append((df1[time_col].min(), df1[time_col].max()))
+    if use2 and df2 is not None and not df2.empty:
+        periods.append((df2[time_col].min(), df2[time_col].max()))
+    if use3 and df3 is not None and not df3.empty:
+        periods.append((df3[time_col].min(), df3[time_col].max()))
+
+    # Step 3: Find common start and end OR handle empty-case via time_range
+    if periods:
+        start = max(s for s, _ in periods)
+        end = min(e for _, e in periods)
+
+        if start == end:
+            expected_range = pd.date_range(start=start, end=end, freq=None)
+        elif start > end:
+            raise ValueError("No overlapping time range between the selected datasets.")
+        else:
+            # Step 4: Determine frequency (try infer from first non-empty DF, else fallback)
+            if not freq:
+                # Try infer from whichever DF contributed to periods first
+                for df in [df1, df2, df3]:
+                    if df is not None and not df.empty:
+                        freq = pd.infer_freq(df[time_col].sort_values())
+                        if freq:
+                            break
+                if freq is None:
+                    freq = 'D'  # fallback default
+            expected_range = pd.date_range(start=start, end=end, freq=freq)
+    else:
+        # ---------- EMPTY CASE (your requested else) ----------
+        # No non-empty datasets among the selected ones: fall back to the provided time_range
+        if time_range is None or len(time_range) == 0:
+            # If even time_range is unavailable, return a minimal, empty scaffold
+            start = end = None
+            if not freq:
+                freq = 'D'
+            expected_range = pd.DatetimeIndex([])
+        else:
+            # Use the passed time_range as reference
+            # time_range can be a DatetimeIndex/Series/list-like of datetimes
+            tr = pd.to_datetime(pd.Index(time_range))
+            start = tr.min()
+            end = tr.max()
+            if not freq:
+                # Try to infer from time_range itself
+                freq = pd.infer_freq(tr)
+                if freq is None:
+                    freq = 'D'
+            expected_range = pd.date_range(start=start, end=end, freq=freq)
+
+    # Step 5: Find missing timestamps and compute stats for all three (even if not used)
+    missing1, exp1, found1, perc1 = find_missing_and_stats(df1, start, end, expected_range)
+    missing2, exp2, found2, perc2 = find_missing_and_stats(df2, start, end, expected_range)
+    missing3, exp3, found3, perc3 = find_missing_and_stats(df3, start, end, expected_range)
 
     return {
         'time_reference': time_run,
-        'time_period_ref': (time_range[0], time_range[-1]),
+        'time_period_ref': (time_range[0], time_range[-1]) if time_range is not None and len(time_range) > 0 else (None, None),
         'time_period_data': (start, end),
         'frequency': freq,
         'missing': {
@@ -130,7 +389,7 @@ def memorize_data(file_archive: dict, file_path: str) -> dict:
 
 # ----------------------------------------------------------------------------------------------------------------------
 # method to fill missing data in DataFrame
-def fill_data(df: pd.DataFrame, time_key: Optional[str] = 'time') -> pd.DataFrame:
+def fill_data(df: pd.DataFrame, time_key: Optional[str] = 'time', time_index: bool = False) -> pd.DataFrame:
     """
     Fills missing values in a DataFrame based on column types and names.
 
@@ -166,10 +425,11 @@ def fill_data(df: pd.DataFrame, time_key: Optional[str] = 'time') -> pd.DataFram
             df_filled[col] = df_filled[col].fillna('NA')  # Fallback
 
     # Set the first matching time-related column as index if any exist
-    if time_cols:
-        index_col = time_cols[0]
-        df_filled.set_index(index_col, inplace=True, drop=False)
-        df_filled.index.name = index_col
+    if time_index:
+        if time_cols:
+            index_col = time_cols[0]
+            df_filled.set_index(index_col, inplace=True, drop=False)
+            df_filled.index.name = index_col
 
     if df_filled.index.name in df_filled.columns:
         df_filled = df_filled.drop(columns=[df_filled.index.name])
@@ -183,7 +443,7 @@ def merge_data_by_time(
         df_common: Optional[pd.DataFrame],
         df_step: Optional[pd.DataFrame],
         tag_data_db: str = 'db',
-        tag_data_upd: str = 'latest',
+        tag_data_now: str = 'latest',
         prefix_keys: Optional[str] = None,
         key_cols: Optional[list] = ['{:}_start', '{:}_end'],
         time_col: str = 'time',
@@ -233,6 +493,10 @@ def merge_data_by_time(
         return df_common.reset_index(drop=True) if df_common is not None else df_common
 
     # Validate df_step has required structure
+    for col in resolved_key_cols:
+        if col not in df_step.columns:
+            raise ValueError(f"df_step must contain columns: {resolved_key_cols} but columns {col} is not available")
+
     if not all(col in df_step.columns for col in resolved_key_cols):
         raise ValueError(f"df_step must contain columns: {resolved_key_cols}")
 
@@ -247,19 +511,26 @@ def merge_data_by_time(
 
     # Initialize if df_common is invalid or uninitialized
     if df_common is None or df_common.empty or not all(col in df_common.columns for col in resolved_key_cols):
-        df_step[extra_var_latest_from] = tag_data_upd
+        df_step[extra_var_latest_from] = tag_data_now
         df_result = df_step.reset_index(drop=True)
     else:
+        # Base copies + dtype alignment
         df_common_tmp = df_common.copy()
         df_common_tmp[time_col] = pd.to_datetime(df_common_tmp[time_col], errors='coerce')
 
-        # Drop overlapping time entries from df_common
-        df_common_filtered = deepcopy(df_common_tmp[~df_common_tmp[time_col].isin(df_step[time_col])])
-        df_common_filtered[extra_var_latest_from] = tag_data_db
+        df_step_tmp = df_step.copy()
+        df_step_tmp[time_col] = pd.to_datetime(df_step_tmp[time_col], errors='coerce')
 
-        # Combine
-        df_combined = pd.concat([df_common_filtered, df_step], ignore_index=True)
-        df_combined[extra_var_latest_from] = df_combined[extra_var_latest_from].fillna(tag_data_upd)
+        # Keep ONLY rows from df_step that are not already in df_common_tmp
+        df_step_filtered = df_step_tmp[~df_step_tmp[time_col].isin(df_common_tmp[time_col])].copy()
+
+        # Provenance
+        df_common_tagged = df_common_tmp.copy()
+        df_common_tagged[extra_var_latest_from] = tag_data_now
+        df_step_filtered[extra_var_latest_from] = tag_data_db
+
+        # Combine (all df_common_tmp + only non-overlapping df_step)
+        df_combined = pd.concat([df_common_tagged, df_step_filtered], ignore_index=True)
         df_result = df_combined.sort_values(by=time_col).reset_index(drop=True)
 
     # Prefix data columns if needed
@@ -276,7 +547,6 @@ def merge_data_by_time(
         df_result = df_result.rename(columns=rename_map)
 
     return df_result
-
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -367,11 +637,11 @@ def merge_data_by_vars(
 # method to read data (from csv file)
 def read_data(file_data, var_data: str ='rain',
               type_data: str ='vector', format_data: str ='csv',
-              fields_data: dict = {}, delimiter_data: str = ';',
+              fields_data: dict = {}, delimiter_data: str = ';', fields_extra: dict = {},
               prefix_key: (str, None) = 'var', prefix_delimiter: (str, None) = '_'):
 
     # info get data start
-    log_stream.info(f' -----> Get source data {var_data} ... ')
+    log_stream.info(f' ---------> Get source data {var_data} ... ')
 
     # check the type of source data (point or grid)
     if type_data == 'vector' or type_data == 'point':
@@ -385,27 +655,36 @@ def read_data(file_data, var_data: str ='rain',
                 # read datasets
                 file_dframe = read_file_csv(
                     file_data, fields=fields_data, key_column=None,
+                    extra_fields=fields_extra,
                     prefix_key=prefix_key, prefix_delimiter=prefix_delimiter,
                     delimiter=delimiter_data, result_format='dataframe')
 
-                # info get data end
-                log_stream.info(f' -----> Get source data {var_data} ... DONE')
+                # check the reader output
+                if file_dframe is not None:
+                    # info get data end
+                    log_stream.info(f' ---------> Get source data {var_data} ... DONE')
+                else:
+                    # info get data end
+                    log_stream.warning(' ===> File "' + file_data + '" exists but is empty')
+                    log_stream.info(f' ---------> Get source data {var_data} ... FAILED. Datasets is defined by NoneType')
 
             else:
                 # if the source file does not exist, set file_dframe to None and log a warning
                 file_dframe = None
                 log_stream.warning(' ===> File "' + file_data + '" is not available.')
+                # info get data end
+                log_stream.info(f' ---------> Get source data {var_data} ... FAILED')
 
         else:
             # info get data end
             log_stream.error(' ===> Source data format is not supported. Check your source datasets')
-            log_stream.info(' -----> Get source data ... FAILED')
+            log_stream.info(f' ---------> Get source data {var_data} ... FAILED')
             raise NotImplementedError('Only "csv" formats are available.')
 
     else:
         # if the source data type is not supported, raise an error
         log_stream.error(' ===> Source data type is not supported. Check your source datasets')
-        log_stream.info(' -----> Get source data ... FAILED')
+        log_stream.info(f' ---------> Get source data {var_data} ... FAILED')
         raise NotImplementedError('Only "vector" types are available.')
 
     return file_dframe

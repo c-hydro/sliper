@@ -1,0 +1,38 @@
+{
+  "time_ref": "now",
+  "tz": "Europe/Rome",
+  "summary": {
+    "folder_template": "/home/admin/soilslips-ws/data_dynamic/source/run/{YYYY}/{MM}/{DD}",
+    "filename_template": "info_run_{YYYY}{MM}{DD}_{RUN}.json"
+  },
+  "files": {
+    "data": {
+      "source": {
+        "folder_template": "/mnt/RainPercentileModels/risultati/MergeScenarioRegridded/Perc80/{YYYY}/{MM}/{DD}/{RUN}",
+        "glob": "Rain_*.tif"
+      },
+      "dest": {
+        "folder_template": "/home/admin/soilslips-ws/data_dynamic/source/rain/frc/data/{YYYY}/{MM}/{DD}/{RUN}"
+      }
+    },
+    "ancillary_dset_01": {
+      "source": {
+        "folder_template": "/mnt/RainPercentileModels/risultati/MergeScenarioRegridded/Perc80/{YYYY}/{MM}/{DD}/{RUN}",
+        "glob": "ME_*.json"
+      },
+      "dest": {
+        "folder_template": "/home/admin/soilslips-ws/data_dynamic/source/rain/frc/models/{YYYY}/{MM}/{DD}/{RUN}"
+      }
+    },
+    "ancillary_dset_02": {
+      "source": {
+        "folder_template": "/mnt/RainPercentileModels/risultati/MergeScenarioRegridded/Perc80/{YYYY}/{MM}/{DD}/{RUN}",
+        "glob": "MeteoModelCheck_*.json"
+      },
+      "dest": {
+        "folder_template": "/home/admin/soilslips-ws/data_dynamic/source/rain/frc/models/{YYYY}/{MM}/{DD}/{RUN}"
+      }
+    }
+  }
+}
+

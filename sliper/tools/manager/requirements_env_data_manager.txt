@@ -1,7 +1,0 @@
-# Core dependencies
-python-dateutil>=2.8.2
-# Optional: for loading .env files if you add dotenv support
-python-dotenv>=1.0.0
-# Optional: for structured logging or advanced config validation
-pydantic>=2.4.0
-

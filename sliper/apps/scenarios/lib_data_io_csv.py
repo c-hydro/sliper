@@ -33,7 +33,8 @@ def read_file_csv(file_path: str,
                   result_format: str = 'dictionary',
                   prefix_key: Optional[str] = 'rain',
                   prefix_delimiter: Optional[str] = '_',
-                  time_col: str = 'time') -> Union[dict, pd.DataFrame]:
+                  extra_fields: dict = None,
+                  time_col: str = 'time') -> Union[dict, pd.DataFrame, None]:
     """
     Reads a CSV file and returns a dictionary with nested or flat structure.
 
@@ -47,6 +48,7 @@ def read_file_csv(file_path: str,
         result_format (str): 'dictionary' or 'dataframe'.
         prefix_key (str): Prefix to use for auto-generated keys.
         prefix_delimiter (str): Delimiter used after the prefix.
+        extra_fields (dict): Extra fields to be added to the source dataframe
         time_col (str): Mandatory logical name for time column.
 
     Returns:
@@ -58,6 +60,15 @@ def read_file_csv(file_path: str,
 
     if key_column and key_column not in df.columns:
         raise ValueError(f"Key column '{key_column}' not found in the CSV headers.")
+
+    if df.empty:
+        return None
+
+    # add fields (if needed and are not available in the source)
+    if extra_fields is not None:
+        for name, value in extra_fields.items():
+            if name not in list(df.columns):
+                df[name] = value
 
     # Fields processing
     if fields is not None and fields:

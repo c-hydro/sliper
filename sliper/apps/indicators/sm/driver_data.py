@@ -132,12 +132,12 @@ class DriverData:
 
         self.group_time_periods = divide_time_range(
             time_range,
-            ref_time=time_run, ref_frequency='H',
+            ref_time=time_run, ref_frequency='H', ref_rounding='D',
             observed_hours=self.group_time_types['search_period_left'],
             forecast_hours=self.group_time_types['search_period_right'],
             observed_partition=self.group_time_partition['search_partition_left'],
             forecast_partition=self.group_time_partition['search_partition_right'],
-            observed_label='Observed', forecast_label='Forecast')
+            observed_label='Observed', forecast_label='Forecast', mixed_label='Observed_Forecast')
 
     # ------------------------------------------------------------------------------------------------------------------
 
@@ -170,9 +170,11 @@ class DriverData:
             path_name_dst = fill_template_string(
                 template_str=deepcopy(self.path_name_dst),
                 template_map=self.tags_dict,
-                value_map={'destination_sub_path_time': time_run, "destination_datetime_run": time_run,
-                           'destination_datetime_start': time_start, 'destination_datetime_end': time_end,
-                           'alert_area_name': group_key})
+                value_map={
+                    'run_sub_path_time': time_run, 'run_datetime': time_run,
+                    'destination_sub_path_time': time_run, "destination_datetime_run": time_run,
+                    'destination_datetime_start': time_start, 'destination_datetime_end': time_end,
+                    'alert_area_name': group_key})
 
             # apply flags (to update datasets source and destination)
             if self.flag_update_anc_grid:
@@ -189,7 +191,7 @@ class DriverData:
             if not os.path.exists(path_name_dst):
 
                 # time periods type (observed or forecast)
-                group_collections = pd.DataFrame()
+                info_collections = pd.DataFrame()
                 for sub_time_periods in group_time_periods.to_dict(orient="records"):
 
                     # get sub time start and end
@@ -197,49 +199,72 @@ class DriverData:
                     period_id = sub_time_periods['period_id']
                     period_time_key = sub_time_periods['time_key']
                     period_time_start, period_time_end = sub_time_periods['time_start'], sub_time_periods['time_end']
+                    period_time_pivot = sub_time_periods['time_pivot']
                     period_time_range = sub_time_periods['time_range']
 
                     # info source data start
                     log_stream.info(' ------> Type "' + period_tag + '" ... ')
 
                     # get period datasets
-                    period_collections = analysis_collections[period_tag][group_key]
+                    period_collections = analysis_collections[period_tag]
 
-                    # get information about group
-                    group_analysis = period_collections['time_series_analysis']
-                    group_datasets = period_collections['time_series_datasets']
+                    # check period collections avaialbility
+                    if period_collections is not None:
 
-                    # convert group datasets to flat dictionary
-                    group_obj = dict2flat(group_analysis, sep=self.tag_sep)
+                        # get group collections
+                        group_collections = period_collections[group_key]
 
-                    # add extra fields to analysis object
-                    group_dict = fields2dict(
-                        group_obj,
-                        extra_fields={
-                            'time_run': period_time_key, 'time_start': period_time_start, 'time_end': period_time_end,
-                            'period_tag': period_tag, 'period_type': period_type, 'period_id': period_id},
-                        extra_formats={
-                            'time_run': '%Y-%m-%d', 'time_start': '%Y-%m-%d %H:%M', 'time_end': '%Y-%m-%d %H:%M'})
+                        # get information about group
+                        group_analysis = group_collections['time_series_analysis']
+                        group_datasets = group_collections['time_series_datasets']
 
-                    # create a DataFrame with the group data
-                    group_timestamp = pd.Timestamp(period_time_key)
-                    group_row = pd.DataFrame([group_dict], index=[group_timestamp])
-                    group_row.index.name = 'time'
+                        # convert group datasets to flat dictionary
+                        group_obj = dict2flat(group_analysis, sep=self.tag_sep)
 
-                    # Append the new row to the empty DataFrame
-                    group_collections = pd.concat([group_collections, group_row])
+                        # add extra fields to analysis object
+                        group_dict = fields2dict(
+                            group_obj,
+                            extra_fields={
+                                'time_run': period_time_key, 'time_pivot': period_time_pivot,
+                                'time_start': period_time_start, 'time_end': period_time_end,
+                                'period_tag': period_tag, 'period_type': period_type, 'period_id': period_id},
+                            extra_formats={
+                                'time_run': '%Y-%m-%d', 'time_pivot': '%Y-%m-%d %H:%M',
+                                'time_start': '%Y-%m-%d %H:%M', 'time_end': '%Y-%m-%d %H:%M'})
 
-                    # info source data start
-                    log_stream.info(' ------> Type "' + period_tag + '" ... DONE')
+                        # create a DataFrame with the group data
+                        group_timestamp = pd.Timestamp(period_time_key)
+                        group_row = pd.DataFrame([group_dict], index=[group_timestamp])
+                        group_row.index.name = 'time'
+
+                        # Append the new row to the empty DataFrame
+                        info_collections = pd.concat([info_collections, group_row])
+
+                        # info source data end (done)
+                        log_stream.info(' ------> Type "' + period_tag + '" ... DONE')
+
+                    else:
+
+                        # info source data end (skipped)
+                        log_stream.info(' ------> Type "' + period_tag + '" ... SKIPPED. Datasest is defined by NoneType')
 
                 # dump datasets
                 folder_name_dst, file_name_dst = os.path.split(path_name_dst)
                 os.makedirs(folder_name_dst, exist_ok=True)
 
-                write_file_csv(group_collections, filename=path_name_dst, orientation='cols')
+                # check collections validity
+                if info_collections is not None and not info_collections.empty:
 
-                # info dump alart area information end (DONE)
-                log_stream.info(' -----> Save datasets for reference area "' + group_key + '" ... DONE')
+                    write_file_csv(info_collections, filename=path_name_dst, orientation='cols')
+
+                    # info dump alart area information end (DONE)
+                    log_stream.info(' -----> Save datasets for reference area "' + group_key + '" ... DONE')
+
+                else:
+
+                    # info dump alart area information end (SKIPPED)
+                    log_stream.warning(' ===> Datasets are not defined or defined by NoneType')
+                    log_stream.info(' -----> Save datasets for reference area "' + group_key + '" ... SKIPPED')
 
             else:
                 # info dump alart area information end (SKIPPED)
@@ -298,8 +323,10 @@ class DriverData:
             path_name_anc_ts = fill_template_string(
                 template_str=deepcopy(self.path_name_anc_ts),
                 template_map=self.tags_dict,
-                value_map={'ancillary_sub_path_time': time_run, "ancillary_datetime_run": time_run,
-                           "ancillary_datetime_start": period_time_start, "ancillary_datetime_end": period_time_end})
+                value_map={
+                    'run_sub_path_time': time_run, 'run_datetime': time_run,
+                    'ancillary_sub_path_time': time_run, "ancillary_datetime_run": time_run,
+                    "ancillary_datetime_start": period_time_start, "ancillary_datetime_end": period_time_end})
 
             # apply flags (to update datasets source and destination)
             if self.flag_update_anc_ts:
@@ -312,90 +339,118 @@ class DriverData:
                 # info get datasets start
                 log_stream.info(' ------> Get datasets ... ')
 
-                # iterate over group(s)
-                group_ts_collections = {}
-                for group_key, group_items in group_info.items():
+                # check period collections availability
+                if period_collections is not None:
 
-                    # debug
-                    #group_key = 'alert_area_c'  # debug for testing alert_area_c (some soilslips are defined for 2023-01-08)
+                    # iterate over group(s)
+                    group_ts_collections = {}
+                    for group_key, group_items in group_info.items():
 
-                    # info analysis start
-                    log_stream.info(' ------> Reference area "' + group_key + '" ... ')
+                        # debug
+                        #group_key = 'alert_area_c'  # debug for testing alert_area_c (some soilslips are defined for 2023-01-08)
 
-                    # get geographical datasets
-                    geo_da = data_geo_grid_other[group_key]['geo_dst']
-                    geo_idx_array = data_geo_grid_other[group_key]['index_array']
-                    geo_idx_valid_output = data_geo_grid_other[group_key]['valid_output_index']
-                    geo_pnt = data_geo_pnt_other[group_key]
+                        # info analysis start
+                        log_stream.info(' ------> Reference area "' + group_key + '" ... ')
 
-                    # extract data array values
-                    var_da_raw = deepcopy(period_collections)
-                    # resample data to geographical reference
-                    var_da_resampled = resample_data(
-                        var_da_raw, geo_da, name_da=var_name, method='nearest',
-                        index_array=geo_idx_array, valid_output_index=geo_idx_valid_output)
-                    # mask data with geographical mask
-                    var_da_masked = mask_data(var_da_resampled, geo_da, mask_value=1)
+                        # get geographical datasets
+                        geo_da = data_geo_grid_other[group_key]['geo_dst']
+                        geo_idx_array = data_geo_grid_other[group_key]['index_array']
+                        geo_idx_valid_output = data_geo_grid_other[group_key]['valid_output_index']
+                        geo_pnt = data_geo_pnt_other[group_key]
 
-                    ''' debug
-                    plt.figure()
-                    plt.imshow(var_da_raw.values[:, :, 1])
-                    plt.colorbar()
-    
-                    plt.figure()
-                    plt.imshow(var_da_resampled.values[:, :, 1])
-                    plt.colorbar()
-    
-                    plt.figure()
-                    plt.imshow(geo_da.values)
-                    plt.colorbar()
-    
-                    plt.figure()
-                    plt.imshow(var_da_masked.values[:, :, 1])
-                    plt.colorbar()
-    
-                    plt.show(block=False)
-                    '''
+                        # get datasets information
+                        if period_type == 'Observed':
+                            pass
+                        elif period_type == 'Forecast':
+                            pass
+                        elif period_type == 'Observed_Forecast':
+                            pass
+                        else:
+                            # error message (period type is not allowed)
+                            log_stream.error(' ===> Period type "' + period_type + '" is not allowed')
+                            raise NotImplementedError('Period type is not implemented yet')
 
-                    # transform data to time-series
-                    var_ts_data = transform_data2ts(var_da_masked, column_name=self.template_struct_ts_datasets)
+                        # extract data array values
+                        var_da_raw = deepcopy(period_collections)
+                        # resample data to geographical reference
+                        var_da_resampled = resample_data(
+                            var_da_raw, geo_da, name_da=var_name, method='nearest',
+                            index_array=geo_idx_array, valid_output_index=geo_idx_valid_output)
+                        # mask data with geographical mask
+                        var_da_masked = mask_data(var_da_resampled, geo_da, mask_value=1)
 
-                    # compute time-series statistics
-                    var_metrics_avg = compute_data_metrics(
-                        var_ts_data, column_name=self.template_struct_ts_datasets,
-                        metrics=['first', 'last', 'avg', 'max', 'min'])
+                        ''' debug
+                        plt.figure()
+                        plt.imshow(var_da_raw.values[:, :, 1])
+                        plt.colorbar()
+        
+                        plt.figure()
+                        plt.imshow(var_da_resampled.values[:, :, 1])
+                        plt.colorbar()
+        
+                        plt.figure()
+                        plt.imshow(geo_da.values)
+                        plt.colorbar()
+        
+                        plt.figure()
+                        plt.imshow(var_da_masked.values[:, :, 1])
+                        plt.colorbar()
+        
+                        plt.show(block=False)
+                        '''
 
-                    # store time-series statistics
-                    var_ts_analysis = {
-                        self.template_ts_avg: var_metrics_avg['avg'],
-                        self.template_ts_max: var_metrics_avg['max'],
-                        self.template_ts_first: var_metrics_avg['first'],
-                        self.template_ts_last: var_metrics_avg['last']}
+                        # transform data to time-series
+                        var_ts_data = transform_data2ts(var_da_masked, column_name=self.template_struct_ts_datasets)
 
-                    # organize time-series collections
-                    var_ts_collections = {self.template_struct_ts_datasets: var_ts_data,
-                                          self.template_struct_ts_analysis: var_ts_analysis}
+                        # compute time-series statistics
+                        var_metrics_avg = compute_data_metrics(
+                            var_ts_data, column_name=self.template_struct_ts_datasets,
+                            metrics=['first', 'last', 'avg', 'max', 'min'])
 
-                    # add time-series collections to group
-                    group_ts_collections[group_key] = var_ts_collections
+                        # store time-series statistics
+                        var_ts_analysis = {
+                            self.template_ts_avg: var_metrics_avg['avg'],
+                            self.template_ts_max: var_metrics_avg['max'],
+                            self.template_ts_first: var_metrics_avg['first'],
+                            self.template_ts_last: var_metrics_avg['last']}
 
-                    # info analysis end
-                    log_stream.info(' ------> Reference area "' + group_key + '" ... DONE')
+                        # organize time-series collections
+                        var_ts_collections = {self.template_struct_ts_datasets: var_ts_data,
+                                              self.template_struct_ts_analysis: var_ts_analysis}
 
-                # info get datasets end
-                log_stream.info(' ------> Get datasets ... DONE')
+                        # add time-series collections to group
+                        group_ts_collections[group_key] = var_ts_collections
+
+                        # info analysis end
+                        log_stream.info(' ------> Reference area "' + group_key + '" ... DONE')
+
+                    # info get datasets end (done)
+                    log_stream.info(' ------> Get datasets ... DONE')
+
+                else:
+                    # info get datasets end (skipped)
+                    log_stream.info(' ------> Get datasets ... SKIPPED. Datasets is defined by NoneType')
+                    group_ts_collections = None
 
                 # info save datasets start
                 log_stream.info(' ------> Save datasets ... ')
 
-                # define path name for time-series collections
-                folder_name_anc, file_name_anc = os.path.split(path_name_anc_ts)
-                os.makedirs(folder_name_anc, exist_ok=True)
-                # save time-series collections in workspace object
-                write_obj(path_name_anc_ts, group_ts_collections)
+                # check ts collections availability
+                if group_ts_collections is not None:
 
-                # info save datasets end
-                log_stream.info(' ------> Save datasets ... DONE')
+                    # define path name for time-series collections
+                    folder_name_anc, file_name_anc = os.path.split(path_name_anc_ts)
+                    os.makedirs(folder_name_anc, exist_ok=True)
+                    # save time-series collections in workspace object
+                    write_obj(path_name_anc_ts, group_ts_collections)
+
+                    # info save datasets end (done)
+                    log_stream.info(' ------> Save datasets ... DONE')
+
+                else:
+
+                    # info save datasets end (skipped)
+                    log_stream.info(' ------> Save datasets ... SKIPPED. Datasets is defined by NoneType')
 
             else:
                 # info data already exists
@@ -458,15 +513,19 @@ class DriverData:
             path_name_anc_grid = fill_template_string(
                 template_str=deepcopy(self.path_name_anc_grid),
                 template_map=self.tags_dict,
-                value_map={'ancillary_sub_path_time': time_run, "ancillary_datetime_run": time_run,
-                           "ancillary_datetime_start": period_time_start, "ancillary_datetime_end": period_time_end})
+                value_map={
+                    'run_sub_path_time': time_run, 'run_datetime': time_run,
+                    'ancillary_sub_path_time': time_run, "ancillary_datetime_run": time_run,
+                    "ancillary_datetime_start": period_time_start, "ancillary_datetime_end": period_time_end})
 
             # define ancillary path names (ts)
             path_name_anc_ts = fill_template_string(
                 template_str=deepcopy(self.path_name_anc_ts),
                 template_map=self.tags_dict,
-                value_map={'ancillary_sub_path_time': time_run, "ancillary_datetime_run": time_run,
-                           "ancillary_datetime_start": period_time_start, "ancillary_datetime_end": period_time_end})
+                value_map={
+                    'run_sub_path_time': time_run, 'run_datetime': time_run,
+                    'ancillary_sub_path_time': time_run, "ancillary_datetime_run": time_run,
+                    "ancillary_datetime_start": period_time_start, "ancillary_datetime_end": period_time_end})
 
             # apply flags (to update datasets source and destination)
             if self.flag_update_anc_grid:
@@ -495,7 +554,9 @@ class DriverData:
                     path_name_src = fill_template_string(
                         template_str=deepcopy(self.path_name_src),
                         template_map=self.tags_dict,
-                        value_map={'source_sub_path_time': period_time_step, "source_datetime": period_time_step})
+                        value_map={
+                            'run_sub_path_time': time_run, 'run_datetime': time_run,
+                            'source_sub_path_time': period_time_step, "source_datetime": period_time_step})
 
                     # check if path name source exists
                     if not os.path.exists(path_name_src):
