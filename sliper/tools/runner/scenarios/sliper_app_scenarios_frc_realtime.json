@@ -1,0 +1,220 @@
+{
+  "algorithm": {
+    "general": {
+      "title": "Processing tool for scenarios",
+      "web-site": "",
+      "source": "Python library developed by ARPAL and CIMA Research Foundation",
+      "history": "2.5.0 [20250721]",
+      "project-info": "sliper - Soil Landslide Information and Prediction & Early Response",
+      "algorithm": "Algorithm developed by ARPAL and CIMA Research Foundation"
+    },
+    "flags": {
+      "update_static": true,
+      "update_dynamic_ancillary_datasets": true,
+      "update_dynamic_ancillary_analysis": true,
+      "update_dynamic_destination": true
+    },
+    "info": {},
+    "template": {  
+      "domain_name": "string_domain",
+      "alert_area_name": "string_alert_area",
+      "search_sub_path_time": "%Y/%m/%d/*00",
+      "search_datetime": "%Y%m%d%H%M",
+      "run_sub_path_time": "%Y/%m/%d/%H00",
+      "run_datetime": "%Y%m%d%H%M",
+      "source_sub_path_time_rain": "%Y/%m/%d/",
+      "source_datetime_rain": "%Y%m%d%H%M",
+      "source_sub_path_time_sm": "%Y/%m/%d/",
+      "source_datetime_sm": "%Y%m%d%H%M",
+      "source_sub_path_time_soil_slips": "%Y/%m/%d/",
+      "source_datetime_soil_slips": "%Y%m%d%H%M",
+      "ancillary_sub_path_time": "%Y/%m/%d/%H00",
+      "ancillary_datetime_start": "%Y%m%d%H%M",
+      "ancillary_datetime_end": "%Y%m%d%H%M",
+      "destination_sub_path_time": "%Y/%m/%d/%H00",
+      "destination_datetime_start": "%Y%m%d%H%M",
+      "destination_datetime_end": "%Y%m%d%H%M"
+    }
+  },
+  "data": {
+    "static" : {
+      "source": {
+        "folder_name": "/home/admin/soilslips-ws/data_static/alert_area/",
+        "file_name": "alert_area_info.csv",
+        "type": "vector",
+        "format": "csv"
+      },
+      "destination": {
+        "folder_name": "/home/admin/soilslips-ws/data_static/ancillary/scenarios/",
+        "file_name": "geo_info_scenarios.workspace",
+        "type": "vector",
+        "format": "workspace"
+      }
+    },
+    "dynamic": {
+      "source": {
+        "rain": {
+          "__comment__": "type: time_series [csv]",
+          "folder_name": "/home/admin/soilslips-ws/data_dynamic/destination/indicators/rain/frc/{search_sub_path_time}/",
+          "file_name": "indicators_rain_{search_datetime}_{alert_area_name}.csv",
+          "type": "vector",
+          "format": "csv",
+          "delimiter": ";",
+          "variable": "rain",
+          "prefix": "rain",
+          "fields": {
+            "time": "time",
+            "rain_peak_3H:max": "rain_peak_3H:max",
+            "rain_peak_3H:avg": null,
+            "rain_average_3H:avg": null,
+            "rain_average_3H:max": null,
+            "rain_average_3H:min": null,
+            "rain_accumulated_3H:max": null,
+            "rain_accumulated_3H:min": null,
+            "rain_peak_6H:max": null,
+            "rain_peak_6H:avg": null,
+            "rain_average_6H:avg": null,
+            "rain_average_6H:max": null,
+            "rain_average_6H:min": null,
+            "rain_accumulated_6H:max": null,
+            "rain_accumulated_6H:min": null,
+            "rain_peak_12H:max": null,
+            "rain_peak_12H:avg": null,
+            "rain_average_12H:avg": null,
+            "rain_average_12H:max": null,
+            "rain_average_12H:min": null,
+            "rain_accumulated_12H:max": "rain_accumulated_12H:max",
+            "rain_accumulated_12H:min": null,
+            "rain_peak_24H:max": null,
+            "rain_peak_24H:avg": null,
+            "rain_average_24H:avg": null,
+            "rain_average_24H:max": null,
+            "rain_average_24H:min": null,
+            "rain_accumulated_24H:max": null,
+            "rain_accumulated_24H:min": null,
+            "rain_time_run": "time_run",
+            "rain_time_start": "time_start",
+            "rain_time_end": "time_end",
+            "rain_time_pivot": "time_pivot",
+            "rain_period_tag": null,
+            "rain_period_type": "period_type",
+            "rain_period_id": null,
+            "rain_latest_from": "latest_from"
+          }
+        },
+        "soil_moisture": {
+          "__comment__": "type: time_series [csv]",
+          "folder_name": "/home/admin/soilslips-ws/data_dynamic/destination/indicators/soil_moisture/frc/{search_sub_path_time}/",
+          "file_name": "indicators_sm_{search_datetime}_{alert_area_name}.csv",
+          "type": "vector",
+          "format": "csv",
+          "delimiter": ";",
+          "variable": "soil_moisture",
+          "prefix": "sm",
+          "fields": {
+            "time": "time",
+            "sm_value_avg": null,
+            "sm_value_max": null,
+            "sm_value_first": "sm_value_first",
+            "sm_value_last": "sm_value_last",
+            "sm_time_run": "time_run",
+            "sm_time_start": "time_start",
+            "sm_time_end": "time_end",
+            "sm_time_pivot": "time_pivot",
+            "sm_period_tag": null,
+            "sm_period_type": "period_type",
+            "sm_period_id": null,
+            "sm_latest_from": "latest_from"
+          }
+        },
+        "soil_slips": {
+          "__comment__": "type: vector [csv]",
+          "folder_name": "/home/admin/soilslips-ws/data_dynamic/destination/data/slips/obs/",
+          "file_name": "slips_{alert_area_name}.csv",
+          "type": "vector",
+          "format": "csv",
+          "delimiter": ";",
+          "variable": "soil_slips",
+          "prefix": "slips",
+          "fields": {
+            "time": "time",
+            "slips_year": null,
+            "slips_month": null,
+            "slips_day": null,
+            "slips_n": "soil_slips",
+            "slips_id": "id",
+            "slips_area_label": "area_label",
+            "slips_alert_color": "alert_color",
+            "slips_alert_rgb": "alert_rgb",
+            "slips_latest_from": "latest_from"
+          }
+        }
+      },
+      "ancillary": {
+        "datasets": {
+          "folder_name": "/home/admin/soilslips-ws/data_dynamic/ancillary/scenarios/frc/{run_sub_path_time}",
+          "file_name": "scenarios_datasets_{run_datetime}_{alert_area_name}.workspace"
+        },
+        "analysis": {
+          "folder_name": "/home/admin/soilslips-ws/data_dynamic/ancillary/scenarios/frc/{run_sub_path_time}",
+          "file_name": "scenarios_analysis_{run_datetime}_{alert_area_name}.workspace"
+        }
+      },
+      "destination": {
+        "__comment__": "type: vector [csv]",
+        "folder_name": "/home/admin/soilslips-ws/data_dynamic/destination/scenarios/frc/{run_sub_path_time}",
+        "file_name": "scenarios_{run_datetime}_{alert_area_name}.csv",
+        "type": "vector",
+        "format": "csv",
+        "delimiter": ";",
+        "variable": "scenarios",
+        "prefix": "scenarios",
+        "fields": {
+          "time": "time",
+          "domain": "domain",
+          "rain_peak_3H:max": "rain_peak_3H:max",
+          "rain_accumulated_12H:max": "rain_accumulated_12H:max",
+          "rain_time_run": "rain_time_run",
+          "rain_time_start": "rain_time_start",
+          "rain_time_end": "rain_time_end",
+          "rain_time_pivot": "rain_time_pivot",
+          "rain_period_type": "rain_period_type",
+          "rain_latest_from": "rain_latest_from",
+          "sm_value_first": "sm_value_first",
+          "sm_value_last": "sm_value_last",
+          "sm_time_run": "sm_time_run",
+          "sm_time_start": "sm_time_start",
+          "sm_time_end": "sm_time_end",
+          "sm_time_pivot": "sm_time_pivot",
+          "sm_period_type": "sm_period_type",
+          "sm_latest_from": "sm_latest_from",
+          "slips_n": "slips_n",
+          "slips_id": "slips_id",
+          "slips_area_label": "slips_domain",
+          "slips_alert_color": "slips_alert_color",
+          "slips_alert_rgb": "slips_alert_rgb",
+          "slips_latest_from": null
+        }
+      }
+    }
+  },
+  "tmp": {
+    "folder_name": "/home/admin/tmp/runner_indicators/",
+    "file_name": null
+  },
+  "log": {
+    "folder_name": "/home/admin/log/runner_scenarios/",
+    "file_name": "sliper_scenarios_frc_realtime.txt"
+  },
+  "time": {
+    "time_run": null,
+    "time_start": null,
+    "time_end": null,
+    "time_period": {"obs": 30, "frc": 0},
+    "time_frequency": "D",
+    "time_rounding": "D",
+    "time_start_align_to_midnight": "prev",
+    "time_end_align_to_midnight": "none",
+    "time_reverse": true
+  }
+}

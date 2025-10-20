@@ -1,0 +1,94 @@
+{
+  "algorithm": {
+    "general": {
+      "title": "Running tool for preprocessing rain datasets",
+      "web-site": "",
+      "source": "Python library developed by ARPAL and CIMA Research Foundation",
+      "history": "1.1.0 [20251003]",
+      "project-info": "sliper",
+      "algorithm": "Algorithm developed by ARPAL and CIMA Research Foundation"
+    },
+    "flags": {
+      "updating_static": true,
+      "updating_dynamic": true
+    },
+    "template": {
+      "variable": "string_variable",
+      "run_datetime": "%Y%m%d",
+      "run_sub_path_time": "%Y/%m/%d/",
+      "source_sub_path_time": "%Y/%m/%d/",
+      "source_datetime": "%Y%m%d%H%M",
+      "ancillary_sub_path_time": "%Y/%m/%d/",
+      "ancillary_datetime": "%Y%m%d%H%M",
+      "destination_sub_path_time": "%Y/%m/%d/",
+      "destination_datetime": "%Y%m%d%H%M"
+    },
+    "parameters": {
+      "variable_name": "rain",
+      "variable_limit_min": 0.0, "variable_limit_max": null
+    }
+  },
+  "data": {
+    "static" : {
+      "geo": {
+        "source": {
+          "folder_name": "/home/admin/soilslips-ws/data_static/datasets/",
+          "file_name": "grid_rain.tiff"
+        },
+        "destination": {
+          "folder_name": "/home/admin/soilslips-ws/data_static/reference/",
+          "file_name": "geo_liguria.tiff"
+        }
+      },
+      "weather_stations": {
+        "source": {
+          "folder_name": "/home/admin/soilslips-ws/data_static/db_weather_stations/",
+          "file_name": "dicembre_2019.csv"
+        },
+        "destination": {
+          "folder_name": "/home/admin/soilslips-ws/data_static/db_weather_stations/",
+          "file_name": "registry_weather_stations.csv"
+        }
+      }
+    },
+    "dynamic": {
+      "source": {
+        "__comment__": "type: grid [tif], point [csv, xlsx]",
+        "folder_name": "/home/admin/soilslips-ws/data_dynamic/source/data/rain/obs/{run_sub_path_time}/",
+        "file_name": "Rain_{source_datetime}.tif",
+        "type": "grid",
+        "format": "tif"
+      },
+      "ancillary": {
+        "folder_name": "/home/admin/soilslips-ws/data_dynamic/ancillary/data/rain/obs/{run_sub_path_time}",
+        "file_name": "rain_{ancillary_datetime}.workspace"
+      },
+      "destination": {
+        "__comment__": "type: grid [nc, tif]",
+        "folder_name": "/home/admin/soilslips-ws/data_dynamic/destination/data/rain/obs/{run_sub_path_time}",
+        "file_name": "rain_{destination_datetime}.tiff",
+        "type": "grid",
+        "format": "tif"
+      }
+    }
+  },
+  "tmp": {
+    "folder_name": "/home/admin/tmp/runner_data/",
+    "file_name": null
+  },
+  "log": {
+    "folder_name": "/home/admin/log/runner_data/",
+    "file_name": "sliper_data_preprocessing_rain_obs_realtime.txt"
+  },
+  "time": {
+    "__comment__": "(1) frequency=D, period=n, rounding=D :: (2): frequency=H, period=1, rounding=H",
+    "time_now": null,
+    "time_start": null,
+    "time_end": null,
+    "time_period": {"obs": 48, "frc": 0},
+    "time_frequency": "H",
+    "time_start_align_to_midnight": "prev",
+    "time_end_align_to_midnight": "none",
+    "time_reverse": true
+  }
+}

@@ -1,0 +1,8 @@
+PATH=./conda//bin:$PATH
+export PATH
+source activate sliper_runner_data_libraries
+
+
+# libraries 
+pip install matplotlib
+pip install geopandas

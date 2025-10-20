@@ -1,0 +1,16 @@
+# =====================================================
+# FILE PAIRS CONFIGURATION
+# Format:  MODE SRC_ROOT DEST_ROOT
+# You can use {catchment} to indicate variable catchment subfolders.
+# Lines starting with # are ignored.
+# =====================================================
+
+# SOURCE RAIN MODEL DIRECTORIES
+all /home/admin/soilslips-ws/data_dynamic/source/data/rain/obs/ /home/admin/soilslips-ws/storage/data/source/rain/obs/
+
+# SOURCE SOIL MOISTURE DIRECTORIES (with catchments) ---
+all /home/admin/soilslips-ws/data_dynamic/source/data/soil_moisture/obs/{catchment} /home/admin/soilslips-ws/storage/data/source/soil_moisture/obs/{catchment}
+
+# SOURCE RUN DIRECTORIES
+latest /home/admin/soilslips-ws/data_dynamic/source/run /home/admin/soilslips-ws/storage/run
+

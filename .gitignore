@@ -14,6 +14,37 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Project
+ws/
+conda/
+old/
+dset/
+example/
+tmp/
+*OLD/
+OLD*/
+*OLD*/
+*/tmp/
+miniconda.sh
+*.log
+*.LOG
+old
+OLD
+Log
+tmp
+TMP
+Tmp
+*log*.txt
+*Log*.txt
+*old*.txt
+*OLD*.txt
+*old*.py
+*OLD*.py
+*tmp*.py
+*TMP*.py
+miniconda.sh
+
+
 # Distribution / packaging
 .Python
 build/
