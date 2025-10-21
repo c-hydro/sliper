@@ -109,6 +109,57 @@ def ensure_time_index(df, time_col='time'):
 # ----------------------------------------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------------------------------------------------------------------
+# method to ensure unique step observed_forecast
+def ensure_unique_obsfrc_data(
+        df,
+        rain_col="rain_period_type",
+        sm_col="sm_period_type",
+        time_col="time",
+        search_value="Observed_Forecast",
+        keep="last",                      # "last" (default) or "first"
+        log_times=True,                   # log/print the times that match search_value
+        no_data_numeric=-9999,
+        no_data_string="NoData",
+        no_data_time=pd.NaT):
+
+    if keep not in {"last", "first"}:
+        raise ValueError("Parameter 'keep' must be either 'last' or 'first'.")
+
+    # Identify matching rows (logical OR)
+    mask = (df[rain_col] == search_value) | (df[sm_col] == search_value)
+    idx_match = df.index[mask].tolist()
+
+    # Log all matching times (before any mutation)
+    if log_times:
+        if len(idx_match) > 0:
+            times = [t for t in df.index[mask]]
+            log_stream.warning(f" ===> Rows with {search_value!r}: {len(times)} -> times = {times}")
+
+    # If more than one, keep only first/last and nullify the others
+    if len(idx_match) > 1:
+        keep_idx = idx_match[-1] if keep == "last" else idx_match[0]
+        to_null = [i for i in idx_match if i != keep_idx]
+
+        log_stream.warning(
+            f"===> Source DataFrame contains {len(idx_match)} values of {search_value!r}. "
+            f"Keep the {keep} (index={keep_idx}); nullifying {len(to_null)} others."
+        )
+
+        # Identify column types
+        num_cols = df.select_dtypes(include=["number"]).columns
+        dt_cols = df.select_dtypes(include=["datetime64[ns]", "datetime64[ns, UTC]"]).columns
+        # Strings = all non-numeric and non-datetime columns except the time_col (if it's not datetime)
+        str_cols = [c for c in df.columns if c not in num_cols and c not in dt_cols and c != time_col]
+
+        # Nullify corresponding columns for the rows we are dropping
+        df.loc[to_null, num_cols] = no_data_numeric
+        df.loc[to_null, str_cols] = no_data_string
+        df.loc[to_null, dt_cols] = no_data_time
+
+    return df
+# ----------------------------------------------------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------------------------------------------------
 # method to convert dframe to arrays
 def convert_df2array(fx_dframe):
     fx_arrays = fx_dframe.to_numpy()

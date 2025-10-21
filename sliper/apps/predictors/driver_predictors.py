@@ -21,7 +21,8 @@ from lib_data_io_pickle import read_obj, write_obj
 
 from lib_utils_data_predictors import define_analysis_period, remap_data, fill_data
 from lib_utils_fx_configuration import select_fx_method, organize_fx_args
-from lib_utils_fx_data import ensure_time_index, ensure_time_doy, ensure_data_valid, ensure_data_attrs
+from lib_utils_fx_data import (
+    ensure_time_index, ensure_time_doy, ensure_data_valid, ensure_data_attrs, ensure_unique_obsfrc_data)
 
 from lib_utils_fx_analysis import compute_alert_info
 
@@ -402,6 +403,9 @@ class DriverPredictors:
                     df_data_filtered = ensure_data_attrs(
                         df_data_filtered,
                         attrs={**self.parameters_anls_time, **{'time_start': start, 'time_end': end}})
+                    # ensure analysis observed forecast unique time (missed data in the past frc simulations)
+                    df_data_filtered = ensure_unique_obsfrc_data(
+                        df_data_filtered, no_data_numeric=-9999, no_data_string="NoData", keep='last')
                     # ensure data valid
                     df_data_filtered = ensure_data_valid(
                         df_data_filtered, no_data_numeric=-9999, no_data_string="NoData")
