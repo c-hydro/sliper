@@ -21,13 +21,29 @@ VERBOSE=false
 
 # set datasets configuration (names align by index across arrays)
 group_datasets_name=(
-  "WORKSPACE - ANCILLARY - DATA"
-  "WORKSPACE - ANCILLARY - INDICATORS"
-  "WORKSPACE - ANCILLARY - SCENARIOS"
-  "WORKSPACE - ANCILLARY - PREDICTORS"
-  "WORKSPACE - ANCILLARY - ANALYSIS"
-  "WORKSPACE - DESTINATION - RAIN FORECAST"
-  "WORKSPACE - DESTINATION - SOIL MOISTURE FORECAST"
+  "WORKSPACE DATA - ANCILLARY - DATA"
+  "WORKSPACE DATA - ANCILLARY - INDICATORS"
+  "WORKSPACE DATA - ANCILLARY - SCENARIOS"
+  "WORKSPACE DATA - ANCILLARY - PREDICTORS"
+  "WORKSPACE DATA - ANCILLARY - ANALYSIS"
+  "WORKSPACE DATA - DESTINATION - RAIN - FORECAST"
+  "WORKSPACE DATA - DESTINATION - SOIL MOISTURE - FORECAST"
+  "WORKSPACE DATA - DESTINATION - RAIN - OBSERVED"
+  "WORKSPACE DATA - DESTINATION - SOIL MOISTURE - OBSERVED"
+  "WORKSPACE DATA - DESTINATION - INDICATORS"
+  "WORKSPACE DATA - DESTINATION - SCENARIOS"
+  "WORKSPACE DATA - DESTINATION - PREDICTORS"
+  
+  "WORKSPACE DATA - SOURCE - RAIN - OBSERVED/FORECAST"
+  "WORKSPACE DATA - SOURCE - SOIL MOISTURE - OBSERVED/FORECAST"
+  "WORKSPACE DATA - SOURCE - RUN"
+ 
+  "WORKSPACE ANALYSIS - ANCILLARY - TS"
+  "WORKSPACE ANALYSIS - IMG - TS - OBSERVED/FORECAST"
+  
+  "LOG"
+  "LOCK"
+  "TMP"
 )
 
 group_folder_datasets=(
@@ -38,6 +54,22 @@ group_folder_datasets=(
   "/home/admin/soilslips-ws/data_dynamic/ancillary/analysis/"
   "/home/admin/soilslips-ws/data_dynamic/destination/data/rain/frc/"
   "/home/admin/soilslips-ws/data_dynamic/destination/data/soil_moisture/frc/"
+  "/home/admin/soilslips-ws/data_dynamic/destination/data/rain/obs/"
+  "/home/admin/soilslips-ws/data_dynamic/destination/data/soil_moisture/obs/"
+  "/home/admin/soilslips-ws/data_dynamic/destination/indicators/"
+  "/home/admin/soilslips-ws/data_dynamic/destination/scenarios/"
+  "/home/admin/soilslips-ws/data_dynamic/destination/predictors/"
+  
+  "/home/admin/soilslips-ws/data_dynamic/source/data/rain/"
+  "/home/admin/soilslips-ws/data_dynamic/source/data/soil_moisture/"
+  "/home/admin/soilslips-ws/data_dynamic/source/run/"
+  
+  "/home/admin/soilslips-ws/analysis/ancillary/ts/"
+  "/home/admin/soilslips-ws/analysis/img/ts/"
+  
+  "/home/admin/log/"
+  "/home/admin/lock/"
+  "/home/admin/tmp/"
 )
 
 group_file_datasets_clean=(
@@ -45,6 +77,22 @@ group_file_datasets_clean=(
   true
   true
   true
+  true
+  true
+  true
+  true
+  true
+  true
+  true
+  true
+  
+  true
+  true
+  true
+  
+  true
+  true
+  
   true
   true
   true
@@ -56,8 +104,24 @@ group_file_datasets_elapsed_days=(
   4
   4
   4
+  2
+  2
   3
   3
+  35
+  35
+  35
+  
+  5
+  5
+  5
+  
+  7
+  15
+  
+  5
+  1
+  1
 )
 #-------------------------------------------------------------------------------------
 
@@ -179,7 +243,7 @@ for (( datasets_id=0; datasets_id<len_name; datasets_id++ )); do
   file_datasets_elapsed_days="${group_file_datasets_elapsed_days[$datasets_id]}"
   
   # info datasets start
-  log " ====> DATASETS TYPE ${datasets_name} ... "
+  log " ====> TYPE ${datasets_name} ... "
   
   # checks
   if [[ -z "$folder_datasets" ]]; then
@@ -206,7 +270,7 @@ for (( datasets_id=0; datasets_id<len_name; datasets_id++ )); do
   prune_empty_dirs "$folder_datasets"
   
   # info datasets end
-  log " ====> DATASETS TYPE ${datasets_name} ... DONE"
+  log " ====> TYPE ${datasets_name} ... DONE"
   
 done
 

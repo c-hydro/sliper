@@ -10,8 +10,8 @@ DRY_RUN=false
 LOG_FILE=""
 
 # --- PATH TEMPLATES ---
-RAIN_TEMPLATE="/home/admin/soilslips-ws/storage/source/data/rain/obs/{YYYY}/{MM}/{DD}"
-SOIL_TEMPLATE="/home/admin/soilslips-ws/storage/source/data/soil_moisture/obs/{catchment}/{YYYY}/{MM}/{DD}"
+RAIN_TEMPLATE="/home/admin/soilslips-ws/storage/data/source/rain/obs/{YYYY}/{MM}/{DD}"
+SOIL_TEMPLATE="/home/admin/soilslips-ws/storage/data/source/soil_moisture/obs/{catchment}/{YYYY}/{MM}/{DD}"
 
 # --- LOG FUNCTION ---
 log() {

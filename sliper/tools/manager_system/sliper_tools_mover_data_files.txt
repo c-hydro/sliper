@@ -14,3 +14,16 @@ all /home/admin/soilslips-ws/data_dynamic/source/data/soil_moisture/obs/{catchme
 # SOURCE RUN DIRECTORIES
 latest /home/admin/soilslips-ws/data_dynamic/source/run /home/admin/soilslips-ws/storage/run
 
+# INDICATORS RAIN AND SOIL MOISTURE FOLDERS
+all /home/admin/soilslips-ws/data_dynamic/destination/indicators/rain/obs/ /home/admin/soilslips-ws/storage/indicators/realtime/rain/obs/
+all /home/admin/soilslips-ws/data_dynamic/destination/indicators/soil_moisture/obs/ /home/admin/soilslips-ws/storage/indicators/realtime/soil_moisture/obs/
+
+# SCENARIOS FOLDERS
+all /home/admin/soilslips-ws/data_dynamic/destination/scenarios/obs/ /home/admin/soilslips-ws/storage/scenarios/realtime/obs/
+
+# PREDICTORS FOLDERS
+all /home/admin/soilslips-ws/data_dynamic/destination/predictors/obs/ /home/admin/soilslips-ws/storage/predictors/realtime/obs/
+
+# ANALYSIS FOLDERS
+all /home/admin/soilslips-ws/analysis/img/ts/obs/ /home/admin/soilslips-ws/storage/analysis/realtime/img/ts/obs/
+

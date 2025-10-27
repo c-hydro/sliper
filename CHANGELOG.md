@@ -4,7 +4,7 @@ All notable changes to this project are documented in this file.
 
 ---
 
-## [3.1.0] – 2025-10-20
+## [3.1.0] – 2025-10-27
 ### Added
 - Operational release (forecast and observed mode)
 - Applications to collect and manage datasets (rain, soil moisture and soil slips)
@@ -14,6 +14,7 @@ All notable changes to this project are documented in this file.
 - Applications to analyze indicators, scenarios and predictors daily time-series
 - Script to manage and organize run
 - Script to sync forecast/observed datasets to realtime modes
+- Bug fixes and improvements across all modules (manage observed and forecast datasets)
 
 ## [3.0.0] – 2025-09-04
 ### Added
