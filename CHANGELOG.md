@@ -4,6 +4,12 @@ All notable changes to this project are documented in this file.
 
 ---
 
+## [3.1.1] – 2025-10-27
+### Added
+- Script to manage and organize run
+- Script to sync forecast/observed datasets to realtime modes
+- Bug fixes and improvements across all modules (manage observed and forecast datasets)
+
 ## [3.1.0] – 2025-10-27
 ### Added
 - Operational release (forecast and observed mode)
@@ -12,9 +18,6 @@ All notable changes to this project are documented in this file.
 - Applications to define scenarios
 - Applications to define predictors
 - Applications to analyze indicators, scenarios and predictors daily time-series
-- Script to manage and organize run
-- Script to sync forecast/observed datasets to realtime modes
-- Bug fixes and improvements across all modules (manage observed and forecast datasets)
 
 ## [3.0.0] – 2025-09-04
 ### Added
