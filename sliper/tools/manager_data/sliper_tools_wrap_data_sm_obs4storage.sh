@@ -32,7 +32,6 @@ CMD="$ROOT/sliper_tools_sync_data.sh \
   --n-days 1 \
   --debug-gate \
   --start-hour 00:00 \
-  --end-at-date-obs \
   --filename-date-regex 'hmc\.output-grid\.(?P<ts>[0-9]{12})\.nc\.gz' \
   --lockfile $LOCKFILE"
 

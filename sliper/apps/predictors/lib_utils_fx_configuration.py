@@ -10,6 +10,7 @@ Version:       '1.0.0'
 # ----------------------------------------------------------------------------------------------------------------------
 # libraries
 import logging
+import numpy as np
 from copy import deepcopy
 
 from lib_utils_fx_data import convert_df2array
@@ -112,7 +113,7 @@ def organize_fx_kernel_datasets_out(fx_output, fx_datasets=None,
         fx_dframe = fx_datasets[fx_name_obj]
         fx_output = fx_output.ravel()
         fx_output[fx_output < 0] = 0.0
-        fx_output = fx_output.astype(int)
+        fx_output = fx_output[::-1].astype(int)  # to adapt to the dataframe from oldest to latest
         fx_dframe[fx_name_soil_slips_prediction] = fx_output
     else:
         log_stream.error(' ===> DataFrame must be defined')

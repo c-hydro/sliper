@@ -6,7 +6,7 @@
     "filename_template": "info_run_{YYYY}{MM}{DD}_{RUN}.json"
   },
   "args": {
-    "max_diff_hours": 3,
+    "max_diff_hours": 72,
   	"domain": [
   		"AvetoTrebbiaDomain", "BormidaMDomain", "BormidaSDomain",
     	"CentaDomain", "CentroPonenteDomain", "EntellaDomain", "ErroDomain",

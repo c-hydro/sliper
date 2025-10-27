@@ -80,7 +80,7 @@ class DriverData:
 
         # get ancillary data
         self.file_name_anc = anc_dict[self.file_name_tag]
-        self.folder_name_anc = src_dict[self.folder_name_tag]
+        self.folder_name_anc = anc_dict[self.folder_name_tag]
         self.path_name_anc = os.path.join(self.folder_name_anc, self.file_name_anc)
 
         # get destination data
@@ -162,8 +162,6 @@ class DriverData:
                         ts_name=geo_name, ts_index=geo_idx, ts_catchment=geo_catchment,
                         warning_thresholds=warning_thr,
                         warning_index=warning_id, warning_rgb=warning_rgb)
-
-                    print()
 
                 else:
                     # error message for unsupported format
