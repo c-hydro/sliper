@@ -77,6 +77,8 @@ def main():
     # Set algorithm logging
     set_logging_file(
         logger_name=logger_name,
+        logger_tag_time=data_settings['log'].get("logger_tag_time", False),
+        logger_time_format=data_settings['log'].get("logger_time_format", "%Y%m%d_%H%M%S"),
         logger_file=os.path.join(data_settings['log']['folder_name'], data_settings['log']['file_name']))
     # ------------------------------------------------------------------------------------------------------------------
 

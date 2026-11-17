@@ -2,8 +2,8 @@
 """
 SLIPER APP - SOIL SLIPS DATA PROCESSING - Soil Landslide Information and Prediction & Early Response
 
-__date__ = '20250714'
-__version__ = '1.0.0'
+__date__ = '20260605'
+__version__ = '1.5.0'
 __author__ =
         'Fabio Delogu (fabio.delogu@cimafoundation.org',
         'Francesco Silvestro (francesco.silvestro@cimafoundation.org)'
@@ -14,6 +14,7 @@ General command line:
 python sliper_app_data_processing_slips_main.py -settings_file configuration.json -time "YYYY-MM-DD HH:MM"
 
 Version(s):
+20260603 (1.5.0) --> Update codes and settings file to use the soil_slips database
 20250714 (1.0.0) --> Beta release for sliper package based on previous package(s) and version(s)
 """
 
@@ -42,8 +43,8 @@ log_stream = logging.getLogger(logger_name)
 project_name = 'sliper'
 alg_name = 'SLIPER APP - SLIPS DATA PROCESSING'
 alg_type = 'Package'
-alg_version = '1.0.0'
-alg_release = '2025-07-14'
+alg_version = '1.5.0'
+alg_release = '2026-06-05'
 # ----------------------------------------------------------------------------------------------------------------------
 
 

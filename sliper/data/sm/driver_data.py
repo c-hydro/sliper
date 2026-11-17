@@ -18,9 +18,10 @@ from copy import deepcopy
 
 from lib_data_io_nc import read_data_nc
 from lib_data_io_tiff import read_data_tiff
-from lib_data_io_binary import read_data_binary
+from lib_data_io_binary import read_data_binary, adjust_data_binary
 from lib_data_io_remap import create_dset_continuum
 
+from lib_utils_geo import compute_volume_max
 from lib_utils_method_interpolate import active_var_interpolate, apply_var_interpolate, apply_var_sample
 from lib_utils_method_mask import active_var_mask, apply_var_mask
 from lib_utils_io import read_obj, write_obj, write_dset_nc, write_dset_tiff, filter_dset_vars, adjust_dset_vars
@@ -29,6 +30,8 @@ from lib_utils_system import fill_tags2string, make_folder, intersect_dicts, fin
 from lib_info_args import logger_name, time_format_algorithm, zip_extension
 
 import lib_utils_method_fx as lib_fx
+
+from lib_utils_method_fx import convert_volume2sm
 
 # Logging
 log_stream = logging.getLogger(logger_name)
@@ -118,6 +121,7 @@ class DriverData:
         self.file_include_tag = 'file_include'
         self.file_compression_tag = 'file_compression'
         self.file_geo_reference_tag = 'file_geo_reference'
+        self.file_geo_cn_tag = 'file_geo_cn'
         self.file_geo_mask_tag = 'file_geo_mask'
         self.file_geo_scale_tag = 'file_geo_scale'
         self.file_type_tag = 'file_type'
@@ -555,6 +559,10 @@ class DriverData:
         file_coords = var_dict[self.file_coords_tag]
         file_freq = var_dict[self.file_frequency_tag]
 
+        file_geo_cn = None
+        if self.file_geo_cn_tag in list(var_dict.keys()):
+            file_geo_cn = var_dict[self.file_geo_cn_tag]
+
         file_geo_mask = None
         if self.file_geo_mask_tag in list(var_dict.keys()):
             file_geo_mask = var_dict[self.file_geo_mask_tag]
@@ -584,7 +592,7 @@ class DriverData:
             file_layer = var_dict[self.file_layer_tag]
 
         return (file_include, file_compression,
-                file_geo_reference, file_geo_mask, file_geo_scale,
+                file_geo_reference, file_geo_cn, file_geo_mask, file_geo_scale,
                 file_type, file_coords, file_freq,
                 file_time_steps_expected, file_time_steps_ref, file_time_steps_flag,
                 file_domain, file_layer)
@@ -632,7 +640,7 @@ class DriverData:
                 log_stream.info(' ----> Save datasets destination "' + var_name_dst + '" ... ')
 
                 (file_include_dst, file_compression_dst,
-                 file_geo_reference_dst, file_geo_mask_dst, file_geo_scale_dst,
+                 file_geo_reference_dst, file_geo_cn_dst, file_geo_mask_dst, file_geo_scale_dst,
                  file_type_dst, file_coords_dst, file_freq_dst,
                  file_time_steps_expected_dst, file_time_steps_ref_dst,
                  file_time_steps_flag_dst,
@@ -964,7 +972,8 @@ class DriverData:
                     log_stream.info(' ----> Get datasets source "' + var_name_src + '" ... ')
 
                     (file_include_src, file_compression_src,
-                     file_geo_reference_src, file_geo_mask_src, file_geo_scale_src,
+                     file_geo_reference_src,
+                     file_geo_cn_src, file_geo_mask_src, file_geo_scale_src,
                      file_type_src, file_coords_src, file_freq_src,
                      file_time_steps_expected_src, file_time_steps_ref_src,
                      file_time_steps_flag_src,
@@ -1002,6 +1011,12 @@ class DriverData:
                                     log_stream.error(' ===> Geographical info is defined by NoneType object')
                                     raise RuntimeError('Algorithm will produce unexpected errors.')
 
+                                # get cn information
+                                cn_file_obj = None
+                                if file_geo_cn_src is not None:
+                                    if file_geo_cn_src in list(self.static_data_src.keys()):
+                                        cn_file_obj = self.static_data_src[file_geo_cn_src]
+
                                 # get mask information
                                 mask_file_obj = None
                                 if file_geo_mask_src is not None:
@@ -1034,18 +1049,35 @@ class DriverData:
                                     log_stream.error(' ===> Geographical domain "' + var_domain_name_src + '" not found')
                                     raise IOError('Geographical domain not available. Check your settings file')
 
+                                # get cn data
+                                cn_file_data, cn_file_values = None, None
+                                cn_file_x, cn_file_y, cn_file_attrs = None, None, None
+                                if cn_file_obj is not None:
+                                    if var_domain_name_src in list(cn_file_obj.keys()):
+                                        cn_file_name = cn_file_obj[var_domain_name_src]
+                                        if os.path.exists(cn_file_name):
+                                            cn_file_data = read_obj(cn_file_name)
+                                            cn_file_values, cn_file_x, cn_file_y, cn_file_attrs, _, _, _, _ = \
+                                                self.set_geo_attributes(cn_file_data)
+                                        else:
+                                            log_stream.warning(' ===> CN datasets "' + cn_file_name + '" not found')
+                                    else:
+                                        log_stream.warning(' ===> CN domain "' + var_domain_name_src + '" not found')
+
                                 # get mask data
                                 mask_file_data, mask_file_values = None, None
                                 mask_file_x, mask_file_y, mask_file_attrs = None, None, None
                                 if mask_file_obj is not None:
                                     if var_domain_name_src in list(mask_file_obj.keys()):
                                         mask_file_name = mask_file_obj[var_domain_name_src]
-                                        if os.path.exists(mask_file_name):
+                                        if mask_file_name and os.path.exists(mask_file_name):
                                             mask_file_data = read_obj(mask_file_name)
                                             mask_file_values, mask_file_x, mask_file_y, mask_file_attrs, _, _, _, _ = \
                                                 self.set_geo_attributes(mask_file_data)
                                         else:
-                                            log_stream.warning(' ===> Mask datasets "' + mask_file_name + '" not found')
+                                            log_stream.warning(' ===> Mask datasets not defined. Use mask default = 1')
+                                            mask_file_values = np.ones_like(geo_file_data['data'], dtype=np.float32)
+                                            mask_file_values[geo_file_data['data'] < 0] = np.nan
                                     else:
                                         log_stream.warning(' ===> Mask domain "' + var_domain_name_src + '" not found')
 
@@ -1140,6 +1172,9 @@ class DriverData:
                                         if geo_file_data is None:
                                             log_stream.error(' ===> Geo values is not defined for binary file case')
                                             raise IOError('Check your geo reference in the configuration file')
+                                        if cn_file_data is None:
+                                            log_stream.warning(' ===> CN values is not defined for binary file case')
+                                            continue
 
                                         if (geo_file_x is None) or (geo_file_y is None):
                                             log_stream.error(' ===> Geo reference is not defined for binary file case')
@@ -1147,10 +1182,12 @@ class DriverData:
 
                                         # get binary data
                                         var_dset_tmp = read_data_binary(
-                                            var_file_path_tmp, geo_file_x, geo_file_y, geo_file_attrs,
-                                            var_scale_factor=file_layers_scale_factor, var_time=var_time,
+                                            var_file_path_tmp,
+                                            geo_file_x, geo_file_y, geo_file_data['data'],
+                                            geo_file_attrs,
+                                            var_scale_factor=10000, var_time=var_time,
                                             var_format='i',
-                                            var_name=file_layers_name,
+                                            var_name='volume_tot',
                                             var_time_steps_expected=1,
                                             coord_name_geo_x=self.coord_name_geo_x,
                                             coord_name_geo_y=self.coord_name_geo_y,
@@ -1158,6 +1195,28 @@ class DriverData:
                                             dim_name_geo_x=self.dim_name_geo_x, dim_name_geo_y=self.dim_name_geo_y,
                                             dim_name_time=self.dim_name_time,
                                             dims_order=self.dims_order_3d)
+
+                                        # convert from (conversion did in the driver geo)
+                                        volume_max_values = cn_file_data['data']
+                                        # adapt volume to sm values
+                                        volume_tot_values = var_dset_tmp['volume_tot'].values
+                                        # define soil moisture values
+                                        sm_values = convert_volume2sm(
+                                            volume_tot_values, volume_max_values, values_geo=geo_file_data['data'])
+
+                                        # return data in the same format
+                                        var_dset_tmp = adjust_data_binary(
+                                            sm_values, geo_file_x, geo_file_y,
+                                            var_geo_attrs=geo_file_attrs, var_scale_factor=1,
+                                            var_time=var_time, var_name=file_layers_name,
+                                            var_time_steps_expected=1,
+                                            coord_name_geo_x=self.coord_name_geo_x,
+                                            coord_name_geo_y=self.coord_name_geo_y,
+                                            coord_name_time=self.coord_name_time,
+                                            dim_name_geo_x=self.dim_name_geo_x, dim_name_geo_y=self.dim_name_geo_y,
+                                            dim_name_time=self.dim_name_time,
+                                            dims_order=self.dims_order_3d
+                                        )
 
                                         # organize binary information
                                         var_dset_filter = []
@@ -1232,6 +1291,19 @@ class DriverData:
                                                 log_stream.error(' ===> Masking method "'
                                                                  + str(method_mask) + '" is not allowed')
                                                 raise NotImplementedError('Case not implemented yet')
+
+                                        '''
+                                        # DEBUG
+                                        plt.figure()
+                                        plt.imshow(mask_file_values)
+                                        plt.colorbar()
+
+                                        plt.figure()
+                                        plt.imshow(var_dset_src['SM'].values[:, :, 0])
+                                        plt.colorbar()
+
+                                        plt.show()
+                                        '''
 
                                         # Apply the interpolation method to the variable source data-array
                                         if active_interp:
@@ -1351,7 +1423,7 @@ class DriverData:
                     if (dset_collection_tmp is not None) and (var_name_anc in list(dset_collection_tmp.keys())):
 
                         (file_include_anc, file_compression_anc,
-                         file_geo_reference_anc, file_geo_mask_anc, file_geo_scale_anc,
+                         file_geo_reference_anc, file_geo_cn_anc, file_geo_mask_anc, file_geo_scale_anc,
                          file_type_anc, file_coords_anc, file_freq_anc,
                          file_time_steps_expected_anc, file_time_steps_ref_anc,
                          file_time_steps_flag_anc,

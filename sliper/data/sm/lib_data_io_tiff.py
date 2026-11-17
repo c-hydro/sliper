@@ -3,11 +3,11 @@ Class Features
 
 Name:          lib_data_io_tiff
 Author(s):     Fabio Delogu (fabio.delogu@cimafoundation.org)
-Date:          '20221013'
-Version:       '1.1.0'
+Date:          '20260603'
+Version:       '1.2.0'
 """
 
-#######################################################################################
+# ----------------------------------------------------------------------------------------------------------------------
 # Libraries
 import logging
 import os
@@ -28,21 +28,21 @@ from lib_info_args import logger_name
 log_stream = logging.getLogger(logger_name)
 
 # Debug
-import matplotlib.pylab as plt
-#######################################################################################
+# import matplotlib.pylab as plt
+# ----------------------------------------------------------------------------------------------------------------------
 
-# -------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 # Default settings
 proj_default_wkt = 'GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]'
-# -------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 
 
-# -------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 # Method to write data tiff
 def write_data_tiff(file_name, file_data, file_wide, file_high, file_geotrans, file_proj,
                     file_metadata=None, file_compression='COMPRESS=DEFLATE',
                     file_format=gdalconst.GDT_Float32):
-
+    log_stream.info(f' -------> Save to {file_name} ...')
     if not isinstance(file_data, list):
         file_data = [file_data]
 
@@ -67,10 +67,11 @@ def write_data_tiff(file_name, file_data, file_wide, file_high, file_geotrans, f
         dset_handle.GetRasterBand(file_id + 1).WriteArray(file_data_step)
         dset_handle.GetRasterBand(file_id + 1).SetMetadata(file_metadata_step)
     del dset_handle
-# -------------------------------------------------------------------------------------
+    log_stream.info(f' -------> Save to {file_name} ... DONE')
+# ----------------------------------------------------------------------------------------------------------------------
 
 
-# -------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 # Method to read data
 def read_data_tiff(file_name, var_scale_factor=1,
                    var_type='float32', var_name=None, var_time=None, var_no_data=-9999.0, var_proj='EPSG:4326',
@@ -338,4 +339,4 @@ def read_data_tiff(file_name, var_scale_factor=1,
 
     return var_obj
 
-# -------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------

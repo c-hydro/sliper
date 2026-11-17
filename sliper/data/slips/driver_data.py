@@ -3,17 +3,15 @@ Class Features
 
 Name:          driver_data
 Author(s):     Fabio Delogu (fabio.delogu@cimafoundation.org)
-Date:          '20250616'
-Version:       '1.5.0'
+Date:          '20260605'
+Version:       '1.6.0'
 """
 
 # ----------------------------------------------------------------------------------------------------------------------
 # libraries
 import logging
 import os
-import numpy as np
 import pandas as pd
-import xarray as xr
 
 from copy import deepcopy
 
@@ -23,9 +21,9 @@ from lib_data_io_pickle import read_obj, write_obj
 from lib_utils_data_alert_area import (translate_points_object, filter_points_object,
                                        join_points_and_grid, count_points_and_thresholds)
 from lib_utils_generic import fill_template_string, extract_subkeys
+from lib_utils_db import get_credentials, get_connection, fetch_data
 
 from lib_info_args import logger_name
-
 
 # logging
 log_stream = logging.getLogger(logger_name)
@@ -57,7 +55,12 @@ class DriverData:
         self.dst_dict = dst_dict
         self.tags_dict = tags_dict
 
+        # file tags
         self.file_name_tag, self.folder_name_tag = 'file_name', 'folder_name'
+        # db tags
+        self.machine_tag, self.host_tag, self.db_tag, self.port_tag = 'machine', 'host', 'db', 'port'
+        self.user_tag, self.pass_tag = 'user', 'password'
+        # common tags
         self.format_tag, self.type_tag, self.delimiter_tag, self.fields_tag = 'format', 'type', 'delimiter', 'fields'
 
         # get geographical information
@@ -66,12 +69,44 @@ class DriverData:
         self.data_geo_grid_areas = collections_data_geo_areas
 
         # source object(s)
-        self.folder_name_src, self.file_name_src = src_dict[self.folder_name_tag], src_dict[self.file_name_tag]
-        self.path_name_src = os.path.join(self.folder_name_src, self.file_name_src)
-        self.type_src = src_dict.get(self.type_tag, 'vector')
         self.format_src = src_dict.get(self.format_tag, 'csv')
-        self.delimiter_src = src_dict.get(self.delimiter_tag, ';')
-        self.fields_src = src_dict.get(self.fields_tag, None)
+
+        # select format src
+        if self.format_src == 'csv':
+            # file info src
+            self.info_src = {
+                'folder_name': src_dict['info'][self.folder_name_tag],
+                'file_name': src_dict['info'][self.file_name_tag],
+                'file_path':
+                    os.path.join(src_dict['info'][self.folder_name_tag], src_dict['info'][self.file_name_tag])
+            }
+            # common info src
+            self.type_src = src_dict.get(self.type_tag, 'vector')
+            self.format_src = src_dict.get(self.format_tag, 'csv')
+            self.delimiter_src = src_dict.get(self.delimiter_tag, ';')
+            self.fields_src = src_dict.get(self.fields_tag, None)
+
+        elif self.format_src == 'db':
+
+            # file info src
+            self.info_src = {
+                'machine': src_dict['info'][self.machine_tag],
+                'host': src_dict['info'][self.host_tag],
+                'port': src_dict['info'][self.port_tag],
+                'db': src_dict['info'][self.db_tag],
+                "user": src_dict['info'][self.user_tag],
+                "password": src_dict['info'][self.pass_tag]
+            }
+            # common info src
+            self.type_src = src_dict.get(self.type_tag, 'vector')
+            self.format_src = src_dict.get(self.format_tag, 'csv')
+            self.delimiter_src = src_dict.get(self.delimiter_tag, ';')
+            self.fields_src = src_dict.get(self.fields_tag, None)
+
+        else:
+            # exit if source format is not expected
+            log_stream.error(' ===> Source type is not expected. Only "csv" or "db" are allowed')
+            raise NotImplemented('Case not implemented yet')
 
         # destination object(s)
         self.folder_name_anc, self.file_name_anc = anc_dict[self.folder_name_tag], anc_dict[self.file_name_tag]
@@ -228,19 +263,30 @@ class DriverData:
         geo_grid_areas = self.data_geo_grid_areas
 
         # get the type and format of source data
+        info_src = deepcopy(self.info_src)
         type_src, format_src = self.type_src, self.format_src
         fields_src = self.fields_src
 
-        # compose the path names using the template strings
-        path_name_src = fill_template_string(
-            template_str=deepcopy(self.path_name_src),
-            template_map=self.tags_dict,
-            value_map={'source_sub_path_time': time_run, "source_datetime": time_run})
+        # check format source
+        path_name_src, connections_src = None, None
+        if format_src == 'csv':
+            # update the info of file path
+            path_name_src = fill_template_string(
+                template_str=deepcopy(info_src['file_path']),
+                template_map=self.tags_dict,
+                value_map={'source_sub_path_time': time_run, "source_datetime": time_run})
+        elif format_src == 'db':
+            # update the info of db
+            info_src['user'], info_src['password'] = get_credentials(**info_src)
+            connections_src = get_connection(**info_src)
+        else:
+            log_stream.error(' ===> Source format is not expected.')
+            raise NotImplemented('Case not implemented yet')
 
         path_name_anc = fill_template_string(
             template_str=deepcopy(self.path_name_anc),
             template_map=self.tags_dict,
-            value_map={'destination_sub_path_time': time_run, "destination_datetime": time_run})
+            value_map={'ancillary_sub_path_time': time_run, "ancillary_datetime": time_run})
 
         # apply the update flag (if set by the user)
         if self.flag_update:
@@ -253,14 +299,18 @@ class DriverData:
             # info get data start
             log_stream.info(' -----> Get source data ... ')
 
-            # check if source file exists
-            if os.path.exists(path_name_src):
+            # check if source file or connections exists
+            if ((path_name_src is None and connections_src is not None) or
+                (path_name_src is not None and os.path.exists(path_name_src) and connections_src is None)):
 
                 # check the type of source data (point or grid)
                 if type_src == 'vector' or type_src == 'point':
 
                     # check the source data format (csv or xlsx)
                     if format_src == 'csv':
+
+                        # info type source
+                        log_stream.info(f' ::: CSV File: {path_name_src}')
 
                         # read soil slips datasets
                         file_dframe = read_file_csv(
@@ -284,6 +334,34 @@ class DriverData:
                         # info get data end
                         log_stream.info(' -----> Get source data ... DONE')
 
+                    elif format_src == 'db':
+
+                        # info type source
+                        log_stream.info(f' ::: DB: {self.info_src["db"]}')
+
+                        # fetch soil slips datasets
+                        file_dframe = fetch_data(connections_src, limit=None,
+                                                 fields=fields_src,  result_format='dataframe')
+
+                        # method to translate the soil slips datasets
+                        file_dframe, file_collections, file_geoms = translate_points_object(
+                            file_dframe)
+
+                        # join points, areas and information
+                        file_dframe = join_points_and_grid(
+                            file_dframe, geo_grid_areas,
+                            point_area_tag='alert_area_code',
+                            point_longitude_tag='longitude', point_latitude_tag='latitude',
+                            flag_print_na=True)
+
+                        # count points by data and alert area
+                        count_dframe = count_points_and_thresholds(
+                            file_dframe, geo_info_names,
+                            geo_range_thr, geo_range_id, geo_range_rgb)
+
+                        # info get data end
+                        log_stream.info(' -----> Get source data ... DONE')
+
                     else:
                         # info get data end
                         log_stream.error(' ===> Source data format is not supported. Check your source datasets')
@@ -297,10 +375,17 @@ class DriverData:
                     raise NotImplementedError('Only "vector" types are available.')
 
             else:
-                # if the source file does not exist, set file_obj to None and log a warning
-                count_dframe = None
-                log_stream.warning(' ===> File "' + path_name_src + '" is not available.')
-                log_stream.info(' -----> Get source data ... SKIPPED')
+
+                if format_src == 'csv':
+                    # if the source file does not exist, set file_obj to None and log a warning
+                    count_dframe = None
+                    log_stream.warning(' ===> File "' + path_name_src + '" is not available.')
+                    log_stream.info(' -----> Get source data ... SKIPPED')
+                elif format_src == 'db':
+                    # if the source file does not exist, set file_obj to None and log a warning
+                    count_dframe = None
+                    log_stream.warning(' ===> Connections are not established.')
+                    log_stream.info(' -----> Get source data ... SKIPPED')
 
             # info save data start
             log_stream.info(' -----> Save source data ... ')

@@ -91,6 +91,7 @@ def main():
         align_start_to_midnight=data_settings['time']['time_start_align_to_midnight'],
         align_end_to_midnight=data_settings['time']['time_end_align_to_midnight']
     )
+    #time_range = time_range[0: 6]
     # -------------------------------------------------------------------------------------
 
     # -------------------------------------------------------------------------------------

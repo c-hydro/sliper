@@ -33,7 +33,7 @@ from lib_info_args import logger_name
 log_stream = logging.getLogger(logger_name)
 
 # debugging
-import matplotlib.pylab as plt
+# import matplotlib.pylab as plt
 # ----------------------------------------------------------------------------------------------------------------------
 
 
@@ -458,7 +458,8 @@ class DriverScenarios:
                             # detect file time rain
                             file_time_src_rain = extract_timestamps_from_filenames(
                                 file_list_src_rain,
-                                date_ref=self.time_ref, date_ascending=False, date_format='%Y%m%d%H%M')
+                                date_ref=self.time_ref, date_ascending=False,
+                                date_format=self.tags_dict['source_datetime_rain'])
 
                             # define folder name sm
                             folder_name_src_sm = folder_time_obj_src_sm[folder_time_tag]
@@ -467,7 +468,8 @@ class DriverScenarios:
                             # detect file time sm
                             file_time_src_sm = extract_timestamps_from_filenames(
                                 file_list_src_sm,
-                                date_ref=self.time_ref, date_ascending=False, date_format='%Y%m%d%H%M')
+                                date_ref=self.time_ref, date_ascending=False,
+                                date_format=self.tags_dict['source_datetime_sm'])
 
                             # check folders (if not found continue)
                             if (file_time_src_rain is None) or (file_time_src_sm is None):

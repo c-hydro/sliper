@@ -25,10 +25,8 @@ log_stream = logging.getLogger(logger_name)
 # ----------------------------------------------------------------------------------------------------------------------
 # method to mask the volume max values
 def mask_volume_max(volume_max, river_network, river_value=1, fill_value=np.nan):
-
     volume_max_masked = volume_max.copy()
     volume_max_masked[river_network == river_value] = fill_value
-
     return volume_max_masked
 # ----------------------------------------------------------------------------------------------------------------------
 

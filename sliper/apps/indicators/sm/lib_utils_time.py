@@ -298,7 +298,28 @@ def divide_time_range(index: pd.DatetimeIndex, ref_time: pd.Timestamp,
         current_start = current_end + ref_freq
         i_fc += 1
 
-    # Assuming `periods` is your list of dictionaries
+    # Remove incomplete periods for multiple partition mode
+    filtered_periods = []
+    for p in periods:
+        n_steps = len(p["time_range"])
+
+        if p["period_type"] == observed_label:
+            expected_steps = _expected_n_steps(observed_hours, ref_frequency)
+            keep = observed_partition == "unique" or n_steps == expected_steps
+
+        elif p["period_type"] == forecast_label:
+            expected_steps = _expected_n_steps(forecast_hours, ref_frequency)
+            keep = forecast_partition == "unique" or n_steps == expected_steps
+
+        else:
+            keep = True
+
+        if keep:
+            filtered_periods.append(p)
+
+    periods = filtered_periods
+
+    # Assign mixed label
     for p in periods:
         if p["time_start"] < pivot_time < p["time_end"]:
             p["period_type"] = mixed_label
@@ -309,6 +330,12 @@ def divide_time_range(index: pd.DatetimeIndex, ref_time: pd.Timestamp,
 
     # Sort by time
     return df_time
+
+# helper to check steps
+def _expected_n_steps(window: str, ref_frequency: str) -> int:
+    win = parse_time_window(window)
+    step = parse_time_window(ref_frequency)
+    return int(win / step)
 # ----------------------------------------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------------------------------------------------------------------

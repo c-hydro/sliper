@@ -19,7 +19,7 @@ from lib_info_args import logger_name
 log_stream = logging.getLogger(logger_name)
 
 # Debug
-import matplotlib.pylab as plt
+# import matplotlib.pylab as plt
 # ----------------------------------------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------------------------------------------------------------------

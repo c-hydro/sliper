@@ -101,48 +101,107 @@ def translate_points_object(point_dframe,
 # method to join points and grids
 def join_points_and_grid(point_dframe_in, areas_dframe,
                          point_area_tag='ALLERTA',
-                         point_longitude_tag='longitude', point_latitude_tag='latitude',
-                         points_epsg_code=4326) -> gpd.GeoDataFrame:
+                         area_code_tag='alert_area_code',
+                         point_longitude_tag='longitude',
+                         point_latitude_tag='latitude',
+                         points_epsg_code=4326,
+                         flag_print_na=False) -> gpd.GeoDataFrame:
 
-    # info method start
     log_stream.info(' ------> Assign soil slips to alert areas ... ')
 
-    # define points dataframe
     points_dframe_tmp = deepcopy(point_dframe_in)
 
-    # Create geometry column
-    points_epsg_code = normalize_crs(points_epsg_code)  # Ensure EPSG code is normalized
-    # create points geo-dataframes
+    if area_code_tag not in areas_dframe.columns:
+        log_stream.error(
+            f' ===> Tag "{area_code_tag}" is mandatory and not included '
+            f'in the alert areas dataframe'
+        )
+        raise RuntimeError('Check your alert areas dataframe for the requested column')
+
+    if point_area_tag not in points_dframe_tmp.columns:
+        log_stream.warning(
+            f' ===> Tag "{point_area_tag}" is not available in the points dataframe. '
+            f'Initialize it with "NA".'
+        )
+        points_dframe_tmp[point_area_tag] = "NA"
+
+    points_epsg_code = normalize_crs(points_epsg_code)
+
     points_gdf_tmp = gpd.GeoDataFrame(
         points_dframe_tmp,
-        geometry=[Point(xy) for xy in zip(points_dframe_tmp[point_longitude_tag], points_dframe_tmp[point_latitude_tag])],
+        geometry=[
+            Point(xy) for xy in zip(
+                points_dframe_tmp[point_longitude_tag],
+                points_dframe_tmp[point_latitude_tag]
+            )
+        ],
         crs=points_epsg_code
     )
 
-    # check if point_area_tag is avaialable in areas_dframe and points_gdf_tmp
-    if point_area_tag not in list(areas_dframe.columns):
-        log_stream.error(' ===> Tag "' + point_area_tag +
-                         '" is mandatory and not included in the alert areas shapefile')
-        raise RuntimeError('Check your alert areas shapefile for the requested column')
-    if point_area_tag not in list(points_gdf_tmp.columns):
-        log_stream.error(' ===> Tag "' + point_area_tag +
-                         '" is mandatory and not included in the soil slips shapefile')
-        raise RuntimeError('Check your soil slips shapefile for the requested column')
+    if areas_dframe.crs != points_gdf_tmp.crs:
+        areas_dframe = areas_dframe.to_crs(points_gdf_tmp.crs)
 
-    # perform spatial join to determine which area each point falls in
-    point_gdf_joined = gpd.sjoin(points_gdf_tmp, areas_dframe, how="left", predicate="within")
+    point_gdf_joined = gpd.sjoin(
+        points_gdf_tmp,
+        areas_dframe[[area_code_tag, "geometry"]],
+        how="left",
+        predicate="within"
+    )
 
-    # drop all columns that end with '_right'
+    area_code_right = f"{area_code_tag}_right"
+
+    if area_code_right in point_gdf_joined.columns:
+        point_gdf_joined[point_area_tag] = point_gdf_joined[area_code_right].fillna("NA")
+    elif area_code_tag in point_gdf_joined.columns:
+        point_gdf_joined[point_area_tag] = point_gdf_joined[area_code_tag].fillna("NA")
+    else:
+        point_gdf_joined[point_area_tag] = "NA"
+
     point_gdf_joined = point_gdf_joined.drop(
-        columns=[col for col in point_gdf_joined.columns if col.endswith('_right')],
+        columns=[
+            "index_right",
+            f"{area_code_tag}_left",
+            f"{area_code_tag}_right"
+        ],
         errors="ignore"
     )
-    # rename all '_left' columns by removing the suffix
-    point_gdf_joined = point_gdf_joined.rename(
-        columns={col: col.replace('_left', '') for col in point_gdf_joined.columns if col.endswith('_left')}
+
+    # check missing alert areas
+    mask_na = (
+            point_gdf_joined[point_area_tag].isna() |
+            (point_gdf_joined[point_area_tag] == "NA") |
+            (point_gdf_joined[point_area_tag].astype(str).str.strip() == "")
     )
 
-    # info method end
+    n_na = mask_na.sum()
+
+    if n_na > 0:
+
+        log_stream.warning(
+            f' ===> Found {n_na} point(s) not associated with any alert area.'
+        )
+
+        # optional detailed logging
+        if flag_print_na:
+
+            cols_print = [
+                c for c in [
+                    "id",
+                    point_longitude_tag,
+                    point_latitude_tag,
+                    point_area_tag
+                ]
+                if c in point_gdf_joined.columns
+            ]
+
+            for _, row in point_gdf_joined.loc[mask_na, cols_print].iterrows():
+                log_stream.warning(
+                    f' ===> Point ID={row.get("id", "NA")} '
+                    f'Lon={row.get(point_longitude_tag, "NA")} '
+                    f'Lat={row.get(point_latitude_tag, "NA")} '
+                    f'Area={row.get(point_area_tag, "NA")}'
+                )
+
     log_stream.info(' ------> Assign soil slips to alert areas ... DONE')
 
     return point_gdf_joined

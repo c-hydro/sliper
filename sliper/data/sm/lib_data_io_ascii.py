@@ -26,7 +26,7 @@ log_stream = logging.getLogger(logger_name)
 
 logging.getLogger("rasterio").setLevel(logging.WARNING)
 # Debug
-import matplotlib.pylab as plt
+# import matplotlib.pylab as plt
 #######################################################################################
 
 # -------------------------------------------------------------------------------------

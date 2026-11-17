@@ -93,7 +93,7 @@
       },
       "ancillary": {
         "terrain_dataset": {
-          "folder_name": "/home/admin/soilslips-ws/data_static/ancillary/data/soil_moisture/catchments/",
+          "folder_name": "/home/admin/soilslips-ws/data_static/ancillary/info_static/data/soil_moisture/catchments/",
           "file_name": "info_{domain_name}_domain_terrain_src.workspace",
           "file_type": "pickle",
           "file_domain": {"flag": true, "value": null},
@@ -101,7 +101,7 @@
           "file_coords": {"x": null, "y": null}
         },
         "watermark_dataset": {
-          "folder_name": "/home/admin/soilslips-ws/data_static/ancillary/data/soil_moisture/catchments/",
+          "folder_name": "/home/admin/soilslips-ws/data_static//ancillary/info_static/data/soil_moisture/catchments/",
           "file_name": "info_{domain_name}_domain_watermark_src.workspace",
           "file_type": "pickle",
           "file_domain": {"flag": true, "value": null},
@@ -109,7 +109,7 @@
           "file_coords": {"x": null, "y": null}
         },
         "terrain_reference": {
-          "folder_name": "/home/admin/soilslips-ws/data_static/ancillary/data/soil_moisture/liguria/",
+          "folder_name": "/home/admin/soilslips-ws/data_static/ancillary/info_static/data/soil_moisture/liguria/",
           "file_name": "info_liguria_domain_terrain_ref.workspace",
           "file_type": "pickle",
           "file_domain": {"flag": false, "value": "liguria"},
@@ -117,7 +117,7 @@
           "file_coords": {"x": null, "y": null}
         },
         "terrain_variable": {
-          "folder_name": "/home/admin/soilslips-ws/data_static/ancillary/data/soil_moisture/liguria/",
+          "folder_name": "/home/admin/soilslips-ws/data_static/ancillary/info_static/data/soil_moisture/liguria/",
           "file_name": "info_liguria_domain_terrain_dst.workspace",
           "file_type": "pickle",
           "file_domain": {"flag": false, "value": "liguria"},
@@ -129,7 +129,7 @@
     "dynamic": {
       "source": {
         "dataset": {
-          "folder_name": "/home/admin/soilslips-ws/data_dynamic/source/data/soil_moisture/frc/{domain_name}/{run_sub_path_time}/",
+          "folder_name": "/home/admin/soilslips-ws/data_dynamic/source/soil_moisture/frc/{domain_name}/{run_sub_path_time}/",
           "file_name": "hmc.output-grid.{source_datetime}.nc.gz",
           "file_include": true,
           "file_compression": true,
@@ -144,7 +144,7 @@
       },
       "ancillary": {
         "dataset": {
-          "folder_name": "/home/admin/soilslips-ws/data_dynamic/ancillary/data/soil_moisture/frc/{domain_name}/{run_sub_path_time}/",
+          "folder_name": "/home/admin/soilslips-ws/data_dynamic/ancillary/soil_moisture/frc/{domain_name}/{run_sub_path_time}/",
           "file_name": "hmc.output-grid.{domain_name}_{ancillary_datetime}.workspace",
           "file_include": null,
           "file_compression": null,
@@ -160,7 +160,7 @@
       "destination": {
         "dataset": {
           "__comment__" : "tiff: s3m_{domain_name}_{layer_name}_{destination_datetime}.tiff nc: s3m_{domain_name}_{destination_datetime}.nc",
-          "folder_name": "/home/admin/soilslips-ws/data_dynamic/destination/data/soil_moisture/frc/{run_sub_path_time}/",
+          "folder_name": "/home/admin/soilslips-ws/data_dynamic/destination/soil_moisture/frc/{run_sub_path_time}/",
           "file_name": "sm.{destination_datetime}.tiff",
           "file_include": true,
           "file_compression": false,

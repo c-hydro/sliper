@@ -54,18 +54,18 @@
     "dynamic": {
       "source": {
         "__comment__": "type: grid [tif], point [csv, xlsx]",
-        "folder_name": "/home/admin/soilslips-ws/data_dynamic/source/data/rain/frc/perc80/{run_sub_path_time}/",
+        "folder_name": "/home/admin/soilslips-ws/data_dynamic/source/rain/frc/data/{run_sub_path_time}/",
         "file_name": "Rain_{source_datetime}.tif",
         "type": "grid",
         "format": "tif"
       },
       "ancillary": {
-        "folder_name": "/home/admin/soilslips-ws/data_dynamic/ancillary/data/rain/frc/{run_sub_path_time}",
+        "folder_name": "/home/admin/soilslips-ws/data_dynamic/ancillary/rain/frc/{run_sub_path_time}",
         "file_name": "rain_{ancillary_datetime}.workspace"
       },
       "destination": {
         "__comment__": "type: grid [nc, tif]",
-        "folder_name": "/home/admin/soilslips-ws/data_dynamic/destination/data/rain/frc/{run_sub_path_time}",
+        "folder_name": "/home/admin/soilslips-ws/data_dynamic/destination/rain/frc/{run_sub_path_time}",
         "file_name": "rain_{destination_datetime}.tiff",
         "type": "grid",
         "format": "tif"
@@ -73,11 +73,11 @@
     }
   },
   "tmp": {
-    "folder_name": "/home/admin/tmp/runner_data/",
+    "folder_name": "/home/admin/tmp/",
     "file_name": null
   },
   "log": {
-    "folder_name": "/home/admin/log/runner_data/",
+    "folder_name": "/home/admin/log/",
     "file_name": "sliper_data_preprocessing_rain_frc_realtime.txt"
   },
   "time": {
