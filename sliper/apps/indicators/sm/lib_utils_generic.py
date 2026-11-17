@@ -192,20 +192,25 @@ def create_darray(data: np.ndarray,
                                    dims=dims_order,
                                    coords={coord_name_x: (dim_name_x, geo_x),
                                            coord_name_y: (dim_name_y, geo_y)})
+
         elif isinstance(time, pd.DatetimeIndex) or isinstance(time, list):
 
             if isinstance(time, list):
                 time = pd.DatetimeIndex(time)
 
             if data.ndim == 2:
-                data = np.expand_dims(data, axis=0)
+                data = np.expand_dims(data, axis=-1)
 
-            # create 3d data array
-            data_da = xr.DataArray(data,
-                                   dims=dims_order,
-                                   coords={coord_name_x: (dim_name_x, geo_x),
-                                           coord_name_y: (dim_name_y, geo_y),
-                                           coord_name_time: (dim_name_time, time)})
+            data_da = xr.DataArray(
+                data,
+                dims=dims_order,
+                coords={
+                    coord_name_x: (dim_name_x, geo_x),
+                    coord_name_y: (dim_name_y, geo_y),
+                    coord_name_time: (dim_name_time, time)
+                }
+            )
+
         else:
             log_stream.error(' ===> Time obj is in wrong format')
             raise IOError('Variable time format not valid')

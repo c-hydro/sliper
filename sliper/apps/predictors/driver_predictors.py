@@ -35,7 +35,7 @@ from lib_info_args import logger_name
 # logging
 log_stream = logging.getLogger(logger_name)
 # debugging
-import matplotlib.pylab as plt
+# import matplotlib.pylab as plt
 # ----------------------------------------------------------------------------------------------------------------------
 
 
@@ -245,8 +245,31 @@ class DriverPredictors:
                 log_stream.info(' -----> Area "' + str(geo_key) + '" ... ')
                 analysis_workspace[geo_key] = {}
 
+                # info datasets start
+                log_stream.info(' ------> Organize fx datasets ... ')
+
                 # get datasets for the area
                 fx_obj_datasets = datasets_workspace[geo_key]
+                # ensure datetime index
+                fx_obj_datasets.index = pd.to_datetime(fx_obj_datasets.index)
+                # get available years (because for multiple year doy are repeated and predictors are not ordered correctly)
+                fx_obj_years = sorted(fx_obj_datasets.index.year.unique())
+
+                # log analysis years
+                if len(fx_obj_years) == 1:
+                    # message for one year in the dataframe
+                    log_stream.info(f" ::: Analysis is performed in the year {fx_obj_years[0]}. (all or part)")
+                else:
+                    # message for multiple years in the dataframe
+                    years_str = ", ".join(map(str, fx_obj_years))
+                    log_stream.info(f" ::: Analysis is performed separately in the years: {years_str}. (all or part)")
+
+                # debug for testing
+                #df_datasets = datasets_workspace['alert_area_b']
+                #datasets_view = df_datasets[(df_datasets.index >= "2025-10-20") & (df_datasets.index <= "2025-11-19")]
+
+                # info datasets end
+                log_stream.info(' ------> Organize fx datasets ... DONE')
 
                 # info fx start
                 log_stream.info(' ------> Apply fx predictors ...')
@@ -257,35 +280,57 @@ class DriverPredictors:
                     geo_obj_thresholds = self.geo_range_thresholds[geo_key]
                     geo_obj_ids = self.geo_range_id[geo_key]
 
-                    # configure fx driver
-                    driver_fx = DriverFx(
-                        self.time_run,
-                        fx_name=self.fx_name, fx_attrs=self.fx_args)
+                    # initialize yearly collections
+                    file_obj_analysis_collection = []
+                    # iterate over years
+                    for year in fx_obj_years:
 
-                    # organize fx datasets
-                    fx_obj_datasets = driver_fx.organize_fx_datasets_in(
-                        fx_obj_datasets, fx_variables_src=self.parameters_anls_variables)
-                    # organize fx parameters
-                    fx_obj_attributes = driver_fx.organize_fx_parameters()
+                        # select yearly datasets
+                        fx_obj_datasets_year = fx_obj_datasets[fx_obj_datasets.index.year == year].copy()
 
-                    # execute fx
-                    fx_obj_output = driver_fx.exec_fx(fx_obj_datasets, fx_obj_attributes)
-                    # organize fx analysis
-                    fx_obj_analysis = driver_fx.organize_fx_datasets_out(fx_obj_output, fx_obj_datasets)
+                        # configure fx driver
+                        driver_fx = DriverFx(
+                            self.time_run,
+                            fx_name=self.fx_name, fx_attrs=self.fx_args)
 
-                    # add alert info to the analysis
-                    file_obj_analysis = compute_alert_info(
-                        fx_obj_analysis,
-                        column_data='slips_pred_n',
-                        column_id='slips_pred_id',
-                        column_color='slips_pred_alert_color', column_rgba='slips_pred_alert_rgb',
-                        color_ids=geo_obj_ids, color_ranges=geo_obj_thresholds)
+                        # organize fx data
+                        fx_obj_data = driver_fx.organize_fx_datasets_in(
+                            fx_obj_datasets_year, fx_variables_src=self.parameters_anls_variables)
+                        # organize fx parameters
+                        fx_obj_attributes = driver_fx.organize_fx_parameters()
+
+                        # execute fx
+                        fx_obj_results = driver_fx.exec_fx(fx_obj_data, fx_obj_attributes)
+                        # organize fx analysis
+                        fx_obj_analysis = driver_fx.organize_fx_datasets_out(fx_obj_results, fx_obj_data)
+
+                        # add alert info to the analysis
+                        file_obj_analysis_year = compute_alert_info(
+                            fx_obj_analysis,
+                            column_data='slips_pred_n',
+                            column_id='slips_pred_id',
+                            column_color='slips_pred_alert_color', column_rgba='slips_pred_alert_rgb',
+                            color_ids=geo_obj_ids, color_ranges=geo_obj_thresholds)
+
+                        # collect yearly analysis
+                        file_obj_analysis_collection.append(file_obj_analysis_year)
+
+                    # info fx end (done)
+                    log_stream.info(' ------> Apply fx predictors ... DONE')
+
+                    # info results stgart
+                    log_stream.info(' ------> Organize fx results ... ')
+
+                    # merge yearly results
+                    file_obj_analysis = pd.concat(file_obj_analysis_collection, axis=0)
+                    # enforce chronological order
+                    file_obj_analysis = file_obj_analysis.sort_index()
 
                     # save output datasets
                     analysis_workspace[geo_key] = file_obj_analysis
 
-                    # info fx end (done)
-                    log_stream.info(' ------> Apply fx predictors ... DONE')
+                    # info results end
+                    log_stream.info(' ------> Organize fx results ... DONE')
 
                 else:
 
@@ -304,6 +349,10 @@ class DriverPredictors:
 
         # info method end (done)
         log_stream.info(' ----> Compute analysis [' + str(self.time_run) + '] ... DONE')
+
+        # debug for testing
+        #df_analysis = analysis_workspace['alert_area_b']
+        #analysis_view = df_analysis[(df_analysis.index >= "2025-10-01") & (df_analysis.index <= "2025-11-19")]
 
         return analysis_workspace
 
@@ -383,6 +432,9 @@ class DriverPredictors:
                         path_name_src, delimiter=self.delimiter_src, fields=self.fields_src,
                         time_col='time', time_index=True,
                         allowed_prefix=self.prefix_src, prefix_key=None, result_format='dataframe')
+
+                    # debug for testing
+                    #df_view = df_data_raw[(df_data_raw.index >= "2025-10-15") & (df_data_raw.index <= "2025-11-01")]
 
                     # filter data by time
                     if self.time_analysis is not None:

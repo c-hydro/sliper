@@ -4,10 +4,35 @@ All notable changes to this project are documented in this file.
 
 ---
 
+## [3.3.0] – 2026-11-14
+### Added
+- Operational script configurations for managing and using datasets 
+- Operational applications to manage datasets, indicators, scenarios, predictors, analysis and report
+### Fixed
+- Bug fixes to configure the fully operational soil-slips framework
+
+## [3.2.0] – 2026-09-08
+### Added
+- Operational script configurations for managing and using datasets 
+### Fixed
+- Bug fixes in analysis rain and datasets in multi-year analysis
+
+## [3.1.3] – 2026-08-23
+### Added
+- Script to debug and plot data array
+### Fixed
+- Bug fixes and improvements across all modules (manage observed and forecast datasets);
+- Bug fixes for soil moisture and rain indicators
+
+## [3.1.2] – 2026-06-28
+### Fixed
+- Bug fixes in indicators, scenarios and predictors applications;
+
 ## [3.1.1] – 2025-10-27
 ### Added
 - Script to manage and organize run
 - Script to sync forecast/observed datasets to realtime modes
+### Fixed
 - Bug fixes and improvements across all modules (manage observed and forecast datasets)
 
 ## [3.1.0] – 2025-10-27

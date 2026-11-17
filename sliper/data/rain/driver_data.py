@@ -90,7 +90,7 @@ class DriverData:
     def dump_data(self, time_data: pd.Timestamp, var_name='rain'):
 
         # info start
-        log_stream.info(' ----> Dump data ... ')
+        log_stream.info(f' ----> Dump data {str(time_data)} ... ')
 
         # check if time_run is a pd.Timestamp object
         if not isinstance(time_data, pd.Timestamp):
@@ -115,6 +115,8 @@ class DriverData:
 
         # info save datasets start
         log_stream.info(' ------> Save datasets ... ')
+        log_stream.info(f' ::: Get from ancillary: {path_name_anc} ')
+        log_stream.info(f' ::: Save to destination: {path_name_dst} ')
 
         # check if destination file exists
         if not os.path.exists(path_name_dst):
@@ -202,7 +204,7 @@ class DriverData:
             log_stream.info(' ------> Save datasets ... SKIPPED. File already exists: ' + path_name_dst)
 
         # info end
-        log_stream.info(' ----> Dump data ... DONE')
+        log_stream.info(f' ----> Dump data {str(time_data)}... DONE')
 
     # ------------------------------------------------------------------------------------------------------------------
 
@@ -212,7 +214,7 @@ class DriverData:
                       var_name='rain', var_min=0, var_max=None):
 
         # info start
-        log_stream.info(' ----> Organize data ... ')
+        log_stream.info(f' ----> Organize data {str(time_data)} ... ')
 
         # check if time_data is a pd.Timestamp object
         if not isinstance(time_data, pd.Timestamp):
@@ -239,6 +241,11 @@ class DriverData:
             run_time=self.time_run,
             source_time=time_data, destination_time=time_data, ancillary_time=time_data,
             template_map=self.tags_dict)
+
+        # info file
+        log_stream.info(' ------> Get datasets ... ')
+        log_stream.info(f' ::: Get from source  {path_name_src} ')
+        log_stream.info(f' ::: Save to ancillary: {path_name_anc} ')
 
         # apply the update flag (if set by the user)
         if self.flag_update:
@@ -441,12 +448,16 @@ class DriverData:
 
                 log_stream.info(' ------> Save map datasets ... SKIPPED. Datasets is defined by NoneType or empty')
 
+            # get end
+            log_stream.info(' ------> Get datasets ... DONE')
             # info end
-            log_stream.info(' ----> Organize data ... DONE')
+            log_stream.info(f' ----> Organize data {str(time_data)} ... DONE')
 
         else:
 
+            # get end
+            log_stream.info(' ------> Get datasets ... SKIPPED.')
             # info end
-            log_stream.info(' ----> Organize data ... SKIPPED. Datasets was previously saved')
+            log_stream.info(f' ----> Organize data {str(time_data)} ... SKIPPED. Datasets was previously saved')
 
 # ----------------------------------------------------------------------------------------------------------------------

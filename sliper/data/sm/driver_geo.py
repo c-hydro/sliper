@@ -31,7 +31,7 @@ from lib_info_args import logger_name, zip_extension
 log_stream = logging.getLogger(logger_name)
 
 # Debug
-import matplotlib.pylab as plt
+#import matplotlib.pylab as plt
 ######################################################################################
 
 
@@ -259,7 +259,7 @@ class DriverGeo:
 
     # -------------------------------------------------------------------------------------
     # Method to get collections fields
-    def get_collections_fields(self, obj_ref, obj_anc):
+    def get_collections_fields(self, obj_ref, obj_anc, debug: bool = False):
 
         # iterate over datasets
         obj_collections_fields = {}
@@ -362,9 +362,23 @@ class DriverGeo:
                         if obj_type_ref == 'ascii':
                             obj_data_tmp = read_data_grid(file_path_tmp, output_format='dictionary')
 
+                            if debug:
+                                if obj_key == 'watermark_dataset':
+                                    if os.path.exists(file_path_tmp):
+                                        import matplotlib.pylab as plt
+                                        fig, axes = plt.subplots(1, 1, figsize=(12, 8))
+                                        im = axes.imshow(obj_data_tmp['values'])
+                                        axes.set_title(file_path_tmp)
+                                        plt.colorbar(im, ax=axes)
+
+                                        plt.tight_layout()
+                                        plt.show()
+
                             if obj_layer is not None:
-                                if obj_layer == 'cn' or obj_layer == 'CN':
-                                    obj_data_tmp['values'] = compute_volume_max(obj_data_tmp['values'])
+                                if obj_layer in ['cn', 'CN', 'cn_dataset', 'curve_number']:
+                                    if obj_data_tmp is not None:
+                                        obj_values_tmp = obj_data_tmp['values']
+                                        obj_data_tmp['values'] = compute_volume_max(obj_values_tmp)
 
                             if obj_data_tmp is not None:
 
@@ -486,6 +500,12 @@ class DriverGeo:
             for id_dom, (key_dom, file_name_terrain_dom) in enumerate(file_obj_terrain_dom.items()):
 
                 log_stream.info(' ------> Compute idxs between domain "' + key_dom + '" and domain reference ... ')
+
+                # check if terrain domain is defined or not
+                if not file_name_terrain_dom:
+                    log_stream.warning("Object terrain domain is empty or not defined")
+                    log_stream.info(' ------> Compute idxs between domain "' + key_dom + '" and domain reference ... SKIPPED')
+                    continue
 
                 obj_terrain_dom = read_obj(file_name_terrain_dom)
                 geo_x_dom, geo_y_dom, geo_xllcorner_dom, \

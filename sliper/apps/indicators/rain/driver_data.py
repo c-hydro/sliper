@@ -29,6 +29,7 @@ from lib_utils_geo import resample_data, mask_data, transform_data2ts
 from lib_utils_generic import fill_template_string, create_darray
 from lib_utils_data_indicators import search_period_by_type, search_window_by_type, search_partition_by_type
 from lib_utils_generic import extract_subpart, dict2flat, flat2dict, fields2dict
+from lib_utils_debug import analyze_data_array, plot_data_2d
 
 from lib_utils_data_rain import (compute_rain_maps_accumulated, compute_rain_peaks,
                                  compute_rain_ts_averaged, compute_rain_ts_accumulated)
@@ -174,6 +175,7 @@ class DriverData:
                 template_map=self.tags_dict,
                 value_map={
                     'run_sub_path_time': time_run, 'run_datetime': time_run,
+                    'db_sub_path_time': time_start, 'db_datetime': time_start,
                     'destination_sub_path_time': time_run, "destination_datetime_run": time_run,
                     'destination_datetime_start': time_start, 'destination_datetime_end': time_end,
                     'alert_area_name': group_key})
@@ -261,7 +263,7 @@ class DriverData:
 
     # ------------------------------------------------------------------------------------------------------------------
     # method to analyze data
-    def analyze_data(self, data_collections: dict, var_name='rain'):
+    def analyze_data(self, data_collections: dict, var_name='rain', var_analysis='default'):
 
         # info method start
         log_stream.info(' ----> Analyze dynamic data [' + str(self.time_run) + '] ... ')
@@ -307,6 +309,7 @@ class DriverData:
                 template_map=self.tags_dict,
                 value_map={
                     'run_sub_path_time': time_run, 'run_datetime': time_run,
+                    'db_sub_path_time': period_time_start, 'db_datetime': period_time_start,
                     'ancillary_sub_path_time': time_run, "ancillary_datetime_run": time_run,
                     "ancillary_datetime_start": period_time_start, "ancillary_datetime_end": period_time_end})
 
@@ -481,7 +484,7 @@ class DriverData:
 
     # ------------------------------------------------------------------------------------------------------------------
     # method to organize data
-    def organize_data(self, time_all=True, var_name='rain'):
+    def organize_data(self, time_all=True, var_name='rain', var_analysis='default'):
 
         # info method start
         log_stream.info(' ----> Organize dynamic data [' + str(self.time_run) + '] ... ')
@@ -526,6 +529,7 @@ class DriverData:
                 template_map=self.tags_dict,
                 value_map={
                     'run_sub_path_time': time_run, 'run_datetime': time_run,
+                    'db_sub_path_time': period_time_start, 'db_datetime': period_time_start,
                     'ancillary_sub_path_time': time_run, "ancillary_datetime_run": time_run,
                     "ancillary_datetime_start": period_time_start, "ancillary_datetime_end": period_time_end})
 
@@ -535,6 +539,7 @@ class DriverData:
                 template_map=self.tags_dict,
                 value_map={
                     'run_sub_path_time': time_run, 'run_datetime': time_run,
+                    'db_sub_path_time': period_time_start, 'db_datetime': period_time_start,
                     'ancillary_sub_path_time': time_run, "ancillary_datetime_run": time_run,
                     "ancillary_datetime_start": period_time_start, "ancillary_datetime_end": period_time_end})
 
@@ -633,15 +638,14 @@ class DriverData:
                                     data_in_3d[:, :, file_id] = data_in_2d
                                     data_time.append(time_stamp_step)
 
-                                    ''' debug
-                                    plt.figure()
-                                    plt.imshow(data_in_2d)
-                                    plt.colorbar()
-                                    plt.figure()
-                                    plt.imshow(data_in_3d[:, :, file_id])
-                                    plt.colorbar()
-                                    plt.show()
-                                    '''
+                                    # debug data in/out
+                                    debug = False
+                                    plot_data_2d(
+                                        data_in_2d, debug=debug, vmin=0, block=True,
+                                        title=f"Data IN [{file_id}] - {time_stamp_step}")
+                                    plot_data_2d(
+                                        data_in_3d[:, :, file_id], debug=debug, vmin=0, block=True,
+                                        title=f"Data OUT [{file_id}] - {time_stamp_step}")
 
                                 # create data array object
                                 data_da = create_darray(
@@ -669,6 +673,10 @@ class DriverData:
                     # error message (type is not allowed)
                     log_stream.error(' ===> Filename type "'+ self.type_src + '" is not allowed')
                     raise NotImplementedError('Format is not implemented yet')
+
+                # method to analyze data array
+                analyze_data_array(
+                    data_da, analysis_variable=var_name, analysis_mode=var_analysis, separetor_prefix='------->')
 
                 # info merge data end
                 log_stream.info(' ------> Merge source data ... DONE')

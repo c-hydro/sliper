@@ -10,6 +10,7 @@ Version:       '1.0.0'
 # ----------------------------------------------------------------------------------------------------------------------
 # libraries
 import logging
+from datetime import datetime
 import os
 import logging.config
 import glob
@@ -23,10 +24,16 @@ from lib_info_args import logger_format as logger_formatter_default
 
 # ----------------------------------------------------------------------------------------------------------------------
 # method to set logging file
-def set_logging_file(logger_file=logger_file_default, logger_name=logger_name_default,
-                     logger_handle=logger_handle_default, logger_formatter=logger_formatter_default,
-                     logger_history=False, logger_history_maxfiles=12,
-                     logger_extra_tags=None):
+def set_logging_file(
+        logger_file=logger_file_default,
+        logger_name=logger_name_default,
+        logger_handle=logger_handle_default,
+        logger_formatter=logger_formatter_default,
+        logger_history=False,
+        logger_history_maxfiles=12,
+        logger_extra_tags=None,
+        logger_tag_time=False,
+        logger_time_format="%Y%m%d_%H%M%S"):
 
     if logger_extra_tags is not None:
         for extra_key, extra_value in logger_extra_tags.items():
@@ -34,6 +41,23 @@ def set_logging_file(logger_file=logger_file_default, logger_name=logger_name_de
             string_count = logger_file.count(':')
             extra_value = [extra_value] * string_count
             logger_file = logger_file.format(*extra_value)
+
+    # ---------------------------------------------------------------------
+    # Append timestamp to log filename
+    # Example:
+    #   my_log.txt -> my_log_20260701_153015.txt
+    # ---------------------------------------------------------------------
+    if logger_tag_time:
+        folder, filename = os.path.split(logger_file)
+        basename, extension = os.path.splitext(filename)
+
+        timestamp = datetime.now().strftime(logger_time_format)
+
+        logger_file = os.path.join(
+            folder,
+            f"{basename}_{timestamp}{extension}"
+        )
+    # ---------------------------------------------------------------------
 
     logger_folder_name, logger_file_name = os.path.split(logger_file)
     os.makedirs(logger_folder_name, exist_ok=True)
@@ -50,39 +74,38 @@ def set_logging_file(logger_file=logger_file_default, logger_name=logger_name_de
     logging.getLogger(logger_name)
     logging.root.setLevel(logging.DEBUG)
 
+    # Remove existing handlers (optional but recommended)
+    for handler in logging.root.handlers[:]:
+        logging.root.removeHandler(handler)
+
     # Set logger handle type
     if logger_handle == 'file':
 
-        # Set logger handler obj
         logger_handle_1 = logging.FileHandler(logger_file, 'w')
         logger_handle_2 = logging.StreamHandler()
-        # Set logger level
+
         logger_handle_1.setLevel(logging.DEBUG)
         logger_handle_2.setLevel(logging.DEBUG)
-        # Set logger formatter
-        logger_handle_1.setFormatter(logging.Formatter(logger_formatter))
-        logger_handle_2.setFormatter(logging.Formatter(logger_formatter))
-        # Add handle to logger
+
+        formatter = logging.Formatter(logger_formatter)
+        logger_handle_1.setFormatter(formatter)
+        logger_handle_2.setFormatter(formatter)
+
         logging.getLogger('').addHandler(logger_handle_1)
         logging.getLogger('').addHandler(logger_handle_2)
 
     elif logger_handle == 'stream':
 
-        # Set logger handler obj
-        logging.StreamHandler()
-        # Set logger level
-        logger_handle.setLevel(logging.DEBUG)
-        # Set logger formatter
-        logger_handle.setFormatter(logging.Formatter(logger_formatter))
-        # Add handle to logger
-        logging.getLogger('').addHandler(logger_handle)
+        handler = logging.StreamHandler()
+        handler.setLevel(logging.DEBUG)
+        handler.setFormatter(logging.Formatter(logger_formatter))
+        logging.getLogger('').addHandler(handler)
 
     else:
 
-        # Set logger handler obj
-        logging.NullHandler()
-        # Add handle to logger
-        logging.getLogger('').addHandler(logger_handle)
+        logging.getLogger('').addHandler(logging.NullHandler())
+
+    return logger_file
 
 # ----------------------------------------------------------------------------------------------------------------------
 

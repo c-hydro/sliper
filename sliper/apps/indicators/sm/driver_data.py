@@ -172,6 +172,7 @@ class DriverData:
                 template_map=self.tags_dict,
                 value_map={
                     'run_sub_path_time': time_run, 'run_datetime': time_run,
+                    'db_sub_path_time': time_start, 'db_datetime': time_start,
                     'destination_sub_path_time': time_run, "destination_datetime_run": time_run,
                     'destination_datetime_start': time_start, 'destination_datetime_end': time_end,
                     'alert_area_name': group_key})
@@ -325,6 +326,7 @@ class DriverData:
                 template_map=self.tags_dict,
                 value_map={
                     'run_sub_path_time': time_run, 'run_datetime': time_run,
+                    'db_sub_path_time': period_time_start, 'db_datetime': period_time_start,
                     'ancillary_sub_path_time': time_run, "ancillary_datetime_run": time_run,
                     "ancillary_datetime_start": period_time_start, "ancillary_datetime_end": period_time_end})
 
@@ -515,6 +517,7 @@ class DriverData:
                 template_map=self.tags_dict,
                 value_map={
                     'run_sub_path_time': time_run, 'run_datetime': time_run,
+                    'db_sub_path_time': period_time_start, 'db_datetime': period_time_start,
                     'ancillary_sub_path_time': time_run, "ancillary_datetime_run": time_run,
                     "ancillary_datetime_start": period_time_start, "ancillary_datetime_end": period_time_end})
 
@@ -524,6 +527,7 @@ class DriverData:
                 template_map=self.tags_dict,
                 value_map={
                     'run_sub_path_time': time_run, 'run_datetime': time_run,
+                    'db_sub_path_time': period_time_start, 'db_datetime': period_time_start,
                     'ancillary_sub_path_time': time_run, "ancillary_datetime_run": time_run,
                     "ancillary_datetime_start": period_time_start, "ancillary_datetime_end": period_time_end})
 
@@ -544,6 +548,7 @@ class DriverData:
                 log_stream.info(' ------> Check source data ... ')
 
                 # check path list source
+                time_available, time_not_available = [], []
                 check_list_src, path_list_src, data_da = True, [], None
                 for period_time_step in period_time_range:
 
@@ -576,7 +581,13 @@ class DriverData:
                             # info time start
                             log_stream.info(' -------> Time ' + str(period_time_step) + ' ... SKIPPED')
 
+                        # store the time not available
+                        time_not_available.append(period_time_step)
+
                     else:
+
+                        # store the time found
+                        time_available.append(period_time_step)
                         path_list_src.append(path_name_src)
                         # info time start
                         log_stream.info(' -------> Time ' + str(period_time_step) + ' ... DONE')
@@ -603,40 +614,43 @@ class DriverData:
                     elif self.format_src == 'tiff' or self.format_src == 'tif':
 
                         # check if path list source has more than one file
-                        if path_list_src.__len__() > 1:
+                        if len(path_list_src) >= 1:
 
-                            # check if object data is not defined
                             if data_da is None:
 
-                                # create 3D array to store data
-                                data_in_3d = np.zeros(
-                                    shape=[geo_x_ref_2d.shape[0], geo_y_ref_2d.shape[1], path_list_src.__len__()])
-                                data_in_3d[:, :, :] = np.nan
+                                data_in_3d = np.full(
+                                    shape=[
+                                        geo_x_ref_2d.shape[0],
+                                        geo_y_ref_2d.shape[1],
+                                        len(path_list_src)
+                                    ],
+                                    fill_value=np.nan,
+                                    dtype=float
+                                )
 
-                                # iterate over path list source
                                 data_time = []
-                                for file_id, (file_name_step, time_stamp_step) in enumerate(zip(path_list_src, period_time_range)):
+                                for file_id, (file_name_step, time_stamp_step) in enumerate(
+                                        zip(path_list_src, period_time_range)):
                                     da_in_2d = read_file_tiff(file_name_step)
-                                    data_in_2d = da_in_2d.values
+                                    data_in_2d = da_in_2d.values.astype(float)
+
                                     data_in_2d[mask_ref_2d == 0] = np.nan
                                     data_in_3d[:, :, file_id] = data_in_2d
+
                                     data_time.append(time_stamp_step)
 
-                                    ''' debug
-                                    plt.figure()
-                                    plt.imshow(data_in_2d)
-                                    plt.colorbar()
-                                    plt.figure()
-                                    plt.imshow(data_in_3d[:, :, file_id])
-                                    plt.colorbar()
-                                    plt.show()
-                                    '''
-
-                                # create data array object
                                 data_da = create_darray(
-                                    data=data_in_3d, geo_x=geo_x_ref_2d, geo_y=geo_y_ref_2d,
-                                    time=data_time, dims_order=['latitude', 'longitude', 'time'])
+                                    data=data_in_3d,
+                                    geo_x=geo_x_ref_2d,
+                                    geo_y=geo_y_ref_2d,
+                                    time=data_time,
+                                    dims_order=['latitude', 'longitude', 'time']
+                                )
 
+                            else:
+                                log_stream.warning(' ===> All time steps are not defined. NoneType object')
+                                log_stream.info(' ------> Merge source data ... SKIPPED')
+                                data_da = None
                         else:
                             # check if object data is not defined
                             if time_all:

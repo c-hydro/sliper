@@ -1,0 +1,81 @@
+{
+  "parameters": {
+    "expected_times": ["04:00", "08:00", "09:00", "14:00", "15:00", "20:00"],
+    "completion_delay_minutes": 360
+  },
+
+  "run": {
+    "source": {
+      "sync_run": {
+		  "folder_name": "/home/admin/info/manager_run/",
+		  "file_name": "select_run_{file_date}.info",
+		  "folder_date_format": "%Y/%m/%d", "file_date_format": "%Y%m%d%H00"
+      },
+      "sync_data": {
+        "sm": {
+          "folder_name": "/home/admin/info/manager_data/",
+          "file_name": "sync_data_sm_frc_{file_date}.info",
+          "folder_date_format": "%Y/%m/%d", "file_date_format": "%Y%m%d%H00"
+        },
+        "rain": {
+          "folder_name": "/home/admin/info/manager_data/",
+          "file_name": "sync_data_rain_frc_{file_date}.info",
+          "folder_date_format": "%Y/%m/%d", "file_date_format": "%Y%m%d%H00"
+        }
+      },
+      "data": {
+        "sm": {
+          "folder_name": "/home/admin/info/runner_data/",
+          "file_name": "wrap_data_sm_frc_{file_date}.info",
+          "folder_date_format": "%Y/%m/%d", "file_date_format": "%Y%m%d%H%M"
+        },
+        "rain": {
+          "folder_name": "/home/admin/info/runner_data/",
+          "file_name": "wrap_data_rain_frc_{file_date}.info",
+          "folder_date_format": "%Y/%m/%d", "file_date_format": "%Y%m%d%H%M"
+        }
+      },
+      "indicators": {
+        "sm": {
+          "folder_name": "/home/admin/info/runner_indicators/",
+          "file_name": "wrap_indicators_sm_frc_{file_date}.info",
+          "folder_date_format": "%Y/%m/%d", "file_date_format": "%Y%m%d%H%M"
+        },
+        "rain": {
+          "folder_name": "/home/admin/info/runner_indicators/",
+          "file_name": "wrap_indicators_rain_frc_{file_date}.info",
+          "folder_date_format": "%Y/%m/%d", "file_date_format": "%Y%m%d%H%M"
+        }
+      },
+      "scenarios": {
+          "folder_name": "/home/admin/info/runner_scenarios/",
+          "file_name": "wrap_scenarios_frc_{file_date}.info",
+          "folder_date_format": "%Y/%m/%d", "file_date_format": "%Y%m%d%H%M"
+      },
+      "predictors": {
+          "folder_name": "/home/admin/info/runner_predictors/",
+          "file_name": "wrap_predictors_frc_{file_date}.info",
+          "folder_date_format": "%Y/%m/%d", "file_date_format": "%Y%m%d%H%M"
+      },
+      "analysis": {
+          "folder_name": "/home/admin/info/analysis/",
+          "file_name": "wrap_analysis_ts_frc_{file_date}.info",
+          "folder_date_format": "%Y/%m/%d", "file_date_format": "%Y%m%d%H%M"
+      }
+    },
+    "destination": {
+      "folder_name": "/home/admin/report/summary/{folder_date}",
+      "file_name": "soil_slips_status_{file_date}.json",
+      "folder_date_format": "%Y/%m/%d", "file_date_format": "%Y%m%d"
+    }
+  },
+  "tmp": {
+    "folder_name": "/home/admin/tmp/report/",
+    "file_name": null
+  },
+  "log": {
+    "folder_name": "/home/admin/log/report/status/{folder_date}",
+    "file_name": "sliper_report_run_{file_date}.txt",
+    "folder_date_format": "%Y/%m/%d", "file_date_format": "%Y%m%d%H%M"
+  }
+}
