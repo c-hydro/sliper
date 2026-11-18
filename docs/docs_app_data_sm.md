@@ -27,7 +27,7 @@ This module is tailored for landslide monitoring and hydrological risk assessmen
 A JSON file (e.g., `configuration.json`) containing definitions for input/output paths, time settings, flags, and processing parameters.
 
 Example:
-```json
+```text
 {
   "time": {
     "time_run": null,

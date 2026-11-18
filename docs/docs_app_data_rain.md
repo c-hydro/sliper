@@ -29,7 +29,7 @@ It supports hydrological risk and landslide early-warning systems.
 A JSON file (e.g., `configuration.json`) specifying paths, time parameters, and algorithmic flags.
 
 Example:
-```json
+```text
 {
   "time": {
     "time_now": "2023-01-15 23:45",
