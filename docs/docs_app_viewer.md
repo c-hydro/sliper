@@ -69,7 +69,7 @@ sliper_viewer_log.txt
 ### Command
 
 ```bash
-python sliper_app_viewer_main.py \
+python sliper/analysis/sliper_app_viewer_ts_main.py \
   -settings_file configuration.json \
   -time "YYYY-MM-DD HH:MM"
 ```
@@ -77,8 +77,8 @@ python sliper_app_viewer_main.py \
 ### Example
 
 ```bash
-python sliper_app_viewer_main.py \
-  -settings_file sliper_app_viewer_configuration.json \
+python sliper/analysis/sliper_app_viewer_ts_main.py \
+  -settings_file sliper/analysis/sliper_app_viewer_ts_configuration.json \
   -time "2025-07-31 00:00"
 ```
 

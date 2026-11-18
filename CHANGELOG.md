@@ -4,12 +4,30 @@ All notable changes to this project are documented in this file.
 
 ---
 
-## [3.3.0] – 2026-11-14
+## [3.3.1] - 2026-11-19
+
 ### Added
-- Operational script configurations for managing and using datasets 
-- Operational applications to manage datasets, indicators, scenarios, predictors, analysis and report
+- Sphinx documentation and a Read the Docs build configuration.
+- A guide to operational status reports and the HTML dashboard.
+
+### Changed
+- Updated the README and workflow guides for the current application layout, Conda setup, and operational wrappers.
+
+## [3.3.0] – 2026-11-14
+
+### Added
+- Soil-slip ingestion from PostgreSQL alongside the existing CSV input, with a database-enabled Conda setup script.
+- Observed dataset build wrappers for rainfall and soil moisture processing, indicators, scenarios, and predictors.
+- Observed soil moisture build configurations for NetCDF and two HMC binary input layouts.
+- Real-time forecast wrappers covering data processing, indicators, scenarios, predictors, and time-series analysis.
+- Daily JSON reports for forecast-stage execution status and a static HTML dashboard with latest and hourly views.
+
+### Changed
+- Grouped operational wrappers under `sliper/tools/binaries/` by execution stage, analysis, reporting, and system tasks.
+
 ### Fixed
-- Bug fixes to configure the fully operational soil-slips framework
+- Corrected predictor ordering when merging results into scenarios.
+- Updated predictor and analysis time handling when prior simulations are missing.
 
 ## [3.2.0] – 2026-09-08
 ### Added

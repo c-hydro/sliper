@@ -1,78 +1,13 @@
-# SLIPER – Tools Realtime Configuration (Scenarios and Predictors)
+# Forecast run selection
 
-**Version:** 1.0.0  
-**Release Date:** 2025-08-01  
-**Authors:**  
-- Fabio Delogu – fabio.delogu@cimafoundation.org  
+The scripts in `sliper/tools/binaries/system/run/` select the forecast cycle used by the forecast wrappers. The selector reads the configured forecast model metadata and writes a run-information JSON file. The real-time wrapper also records an `.info` file for the status report.
 
----
-
-## 📘 Description
-
-This repository contains two shell scripts:
-
-1. **sliper_tools_scenarios_configuration_realtime.sh**  
-2. **sliper_tools_predictors_configuration_realtime.sh**  
-
-These scripts simplify the **setup of configuration files for real-time execution** of the SLIPER Scenarios and Predictors applications.
-
----
-
-## 📥 Purpose
-
-- **Scenarios configuration script**:  
-  Generates or updates configuration files for real-time Scenarios processing.
-
-- **Predictors configuration script**:  
-  Generates or updates configuration files for real-time Predictors processing.
-
----
-
-## 📤 Outputs
-
-- Automatically created or updated JSON configuration files for the relevant application (Scenarios or Predictors).
-
----
-
-## ▶️ Running the Scripts
-
-### Requirements
-- Linux/Unix environment with Bash
-- Proper directory structure for SLIPER applications
-- Necessary permissions for writing configuration files
-
-### Commands
+Set the input and output paths in `sliper_tools_select_run.json` and review the environment and workspace settings in the shell scripts. From the repository root, list the wrapper options with:
 
 ```bash
-bash sliper_tools_scenarios_configuration_realtime.sh
-bash sliper_tools_predictors_configuration_realtime.sh
+bash sliper/tools/binaries/system/run/sliper_tools_wrap_run.sh --help
 ```
 
-These scripts can be customized inside to fit specific **real-time operational chains**.
+In a configured deployment, pass `--run-time HH:MM` to select a specific cycle for the current day. For historical run selection, use `sliper_tools_select_run.sh --mode history --date YYYY-MM-DD --time HH:MM --config /path/to/config.json`.
 
----
-
-## 🧱 Suggested Folder Structure
-
-```
-project/
-├── sliper_tools_scenarios_configuration_realtime.sh
-├── sliper_tools_predictors_configuration_realtime.sh
-├── /data_static/
-├── /data_dynamic/
-└── /log/
-```
-
----
-
-## ⚙️ Notes
-
-- Modify these scripts to reflect your environment paths and operational needs.
-- They are intended for operational deployment to keep configuration files updated.
-
----
-
-## 👞 Contact
-
-For support or contributions:  
-fabio.delogu@cimafoundation.org
+Once the run is selected, [synchronize the input datasets](docs_tools_organizer.md) and run the [application workflow](docs_sliper_workflows.md).
